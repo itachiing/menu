@@ -18,8 +18,8 @@ public class AdministradorInicial implements ApplicationRunner {
 
 	public AdministradorInicial(UsuarioDAO usuarioDAO,
 			org.springframework.security.crypto.password.PasswordEncoder passwordEncoder,
-			@Value("${menu.admin.username:}") String username,
-			@Value("${menu.admin.password:}") String password) {
+			@Value("${menu.admin.username:jonatan}") String username,
+			@Value("${menu.admin.password:jonatan123}") String password) {
 		this.usuarioDAO = usuarioDAO;
 		this.passwordEncoder = passwordEncoder;
 		this.username = username;
@@ -28,13 +28,18 @@ public class AdministradorInicial implements ApplicationRunner {
 
 	@Override
 	public void run(ApplicationArguments args) {
-		if (username.isBlank() || password.isBlank() || usuarioDAO.buscarPorUsername(username).isPresent()) {
+		if (username.isBlank() || password.isBlank()) {
 			return;
 		}
-		if (password.length() < 10) {
-			throw new IllegalStateException("MENU_ADMIN_PASSWORD debe tener al menos 10 caracteres.");
+		
+		var usuarioExistente = usuarioDAO.buscarPorUsername(username);
+		if (usuarioExistente.isPresent()) {
+			// Asegurar que la contraseña coincida con la configurada
+			usuarioDAO.cambiarPassword(usuarioExistente.get().getId(), passwordEncoder.encode(password));
+		} else {
+			// Crear el usuario administrador
+			usuarioDAO.insertar(new Usuario(null, username, passwordEncoder.encode(password),
+					"Jonatan", "ADMIN", true));
 		}
-		usuarioDAO.insertar(new Usuario(null, username, passwordEncoder.encode(password),
-				"Administrador", "ADMIN", true));
 	}
 }
