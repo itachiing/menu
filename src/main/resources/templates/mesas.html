@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mesas y Códigos QR | Asados al Carbón</title>
+  <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+<body>
+  <div class="app-shell">
+    <aside th:replace="~{fragments :: sidebar('mesas')}"></aside>
+    <main class="main-content">
+      <header th:replace="~{fragments :: topbar('Mesas y Códigos QR')}"></header>
+      <div th:replace="~{fragments :: flash}"></div>
+
+      <section class="page-intro">
+        <div>
+          <p class="eyebrow">SALA Y QR</p>
+          <p class="muted">Cada mesa tiene su enlace QR único. Cuando el cliente escanea el código, la mesa queda preseleccionada para su pedido de WhatsApp.</p>
+        </div>
+        <button class="button button-primary" type="button" data-form-toggle="mesaForm">＋ Nueva mesa</button>
+      </section>
+
+      <form id="mesaForm" class="editor-form" th:action="@{/admin/mesas/guardar}" method="post" hidden>
+        <div class="form-heading">
+          <div>
+            <p class="eyebrow">SALA</p>
+            <h2 data-form-title data-new-title="Nueva mesa">Nueva mesa</h2>
+          </div>
+          <button class="icon-action" type="button" data-form-close="mesaForm" aria-label="Cerrar formulario">×</button>
+        </div>
+
+        <input type="hidden" name="id">
+
+        <div class="form-grid">
+          <label>
+            Número de mesa
+            <input name="numero" type="number" min="1" required>
+          </label>
+
+          <label class="check-label">
+            <input type="hidden" name="_activa" value="on">
+            <input name="activa" type="checkbox" value="true" checked>
+            Mesa Activa
+          </label>
+        </div>
+
+        <p class="form-note">El código QR se genera automáticamente al guardar la mesa.</p>
+
+        <div class="form-actions">
+          <button class="button button-secondary" type="button" data-form-close="mesaForm">Cancelar</button>
+          <button class="button button-primary" type="submit">Guardar mesa</button>
+        </div>
+      </form>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Mesa</th>
+              <th>Enlace QR Directo</th>
+              <th>Código Interno</th>
+              <th>Estado</th>
+              <th class="align-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="mesa : ${mesas}">
+              <td class="strong">
+                📍 Mesa <span th:text="${mesa.numero}">1</span>
+              </td>
+              <td>
+                <a th:href="@{/menu(mesa=${mesa.numero})}" target="_blank" class="button button-secondary" style="font-size: 11px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px;">
+                  Abrir Carta Mesa <span th:text="${mesa.numero}">1</span> ↗
+                </a>
+              </td>
+              <td><code class="code-value" th:text="${mesa.codigo}">MESA-01</code></td>
+              <td>
+                <span class="status-pill" th:classappend="${mesa.activa} ? ' status-listo' : ' status-neutral'" th:text="${mesa.activa ? 'Activa' : 'Inactiva'}">Activa</span>
+              </td>
+              <td class="row-actions">
+                <button class="icon-action"
+                        type="button"
+                        title="Editar mesa"
+                        aria-label="Editar mesa"
+                        data-edit-form="mesaForm"
+                        th:attr="data-id=${mesa.id},data-numero=${mesa.numero},data-activa=${mesa.activa}">✎</button>
+                <form th:action="@{/admin/mesas/eliminar}" method="post" data-confirm="¿Eliminar esta mesa?">
+                  <input type="hidden" name="id" th:value="${mesa.id}">
+                  <button class="icon-action danger-action" type="submit" title="Eliminar mesa" aria-label="Eliminar mesa">×</button>
+                </form>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

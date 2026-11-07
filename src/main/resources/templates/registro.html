@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crear Cuenta | Asados al Carbón</title>
+  <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+<body class="login-page">
+  <main class="login-layout">
+    <!-- Left artistic banner -->
+    <section class="login-art" aria-label="Asados al Carbón">
+      <a class="brand brand-light" th:href="@{/menu}">
+        <span class="brand-mark" style="background: linear-gradient(135deg, #ff5722, #ff9800); font-size: 20px;">🔥</span>
+        <span>ASADOS<small>AL CARBÓN</small></span>
+      </a>
+      <div class="login-art-copy">
+        <p class="eyebrow">REGISTRO DE EQUIPO</p>
+        <h1>Crea tu cuenta<br><em>en minutos.</em></h1>
+        <p>Administra tus platos, atiende los pedidos de la mesa y despacha por WhatsApp.</p>
+      </div>
+      <div class="art-footer">
+        <span>SISTEMA DE GESTIÓN</span>
+        <span>SABOR QUE ENCIENDE</span>
+      </div>
+    </section>
+
+    <!-- Right registration form -->
+    <section class="login-form-side">
+      <div class="login-form-wrap">
+        <p class="eyebrow">NUEVO USUARIO</p>
+        <h2>Crear una cuenta</h2>
+        <p class="muted">Regístrate para acceder al panel de Asados al Carbón.</p>
+
+        <!-- Mensajes de alerta -->
+        <div th:if="${error}" class="notice notice-error" role="alert" th:text="${error}">
+          Error al registrar la cuenta.
+        </div>
+        <div th:if="${mensaje}" class="notice notice-success" role="status" th:text="${mensaje}">
+          Operación exitosa.
+        </div>
+
+        <form th:action="@{/registro}" method="post" class="stack-form">
+          <label for="nombre">
+            Nombre completo
+            <input id="nombre" name="nombre" type="text" placeholder="Ej: Jonathan Restrepo" required autofocus>
+          </label>
+
+          <label for="username">
+            Nombre de usuario (para iniciar sesión)
+            <input id="username" name="username" type="text" placeholder="Ej: jonathan" autocomplete="username" required>
+          </label>
+
+          <label for="rol">
+            Rol en el negocio
+            <select id="rol" name="rol" required style="width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); font-size: 13px;">
+              <option value="ADMIN" selected>Administrador (Acceso total)</option>
+              <option value="COCINA">Cocina (Ver y avanzar pedidos)</option>
+              <option value="MESERO">Mesero (Atención de sala)</option>
+            </select>
+          </label>
+
+          <label for="password">
+            Contraseña
+            <input id="password" name="password" type="password" minlength="6" placeholder="Mínimo 6 caracteres" autocomplete="new-password" required>
+          </label>
+
+          <label for="confirmPassword">
+            Confirmar Contraseña
+            <input id="confirmPassword" name="confirmPassword" type="password" minlength="6" placeholder="Repite tu contraseña" autocomplete="new-password" required>
+          </label>
+
+          <button class="button button-primary button-wide" type="submit" style="margin-top: 10px; background: linear-gradient(135deg, #ff5722, #e64a19); border: none;">
+            Crear mi cuenta <span aria-hidden="true">→</span>
+          </button>
+        </form>
+
+        <div style="margin-top: 20px; text-align: center; font-size: 13px;">
+          <span class="muted">¿Ya tienes una cuenta? </span>
+          <a th:href="@{/login}" style="color: #ff5722; font-weight: 700; text-decoration: underline;">Inicia sesión aquí</a>
+        </div>
+
+        <a class="back-link" th:href="@{/menu}" style="margin-top: 24px;">← Volver al menú de clientes</a>
+      </div>
+    </section>
+  </main>
+  <script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resumen | Asados al Carbón</title>
+  <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+<body>
+  <div class="app-shell">
+    <aside th:replace="~{fragments :: sidebar('home')}"></aside>
+
+    <main class="main-content">
+      <header th:replace="~{fragments :: topbar('Resumen del Asadero')}"></header>
+      <div th:replace="~{fragments :: flash}"></div>
+
+      <!-- Welcome section -->
+      <section class="welcome-row">
+        <div>
+          <p class="eyebrow">ASADOS AL CARBÓN</p>
+          <h2>El servicio, en su punto exacto 🔥</h2>
+          <p class="muted">Gestión integral de pedidos en mesa, domicilios y carta digital.</p>
+        </div>
+        <a class="button button-primary" th:href="@{/admin/pedidos}">
+          Ver pedidos en vivo <span aria-hidden="true">→</span>
+        </a>
+      </section>
+
+      <!-- Metric overview grid -->
+      <section class="metric-grid">
+        <article class="metric">
+          <span class="metric-label">Pedidos por atender</span>
+          <strong th:text="${#lists.size(pedidos)}">0</strong>
+          <span class="metric-foot">En cocina o sala</span>
+        </article>
+        <article class="metric">
+          <span class="metric-label">Platos en carta</span>
+          <strong th:text="${productosCount}">0</strong>
+          <span class="metric-foot">Hamburguesas, picadas, etc.</span>
+        </article>
+        <article class="metric">
+          <span class="metric-label">Categorías</span>
+          <strong th:text="${categoriasCount}">0</strong>
+          <span class="metric-foot">Secciones activas</span>
+        </article>
+        <article class="metric">
+          <span class="metric-label">Mesas con QR</span>
+          <strong th:text="${mesasCount}">0</strong>
+          <span class="metric-foot">Configuradas para pedidos</span>
+        </article>
+      </section>
+
+      <!-- Active orders heading -->
+      <section class="section-heading">
+        <div>
+          <p class="eyebrow">SERVICIO ACTUAL</p>
+          <h2>Pedidos recientes</h2>
+        </div>
+        <a class="text-link" th:href="@{/admin/pedidos}">
+          Ver todos los pedidos <span aria-hidden="true">→</span>
+        </a>
+      </section>
+
+      <!-- Orders table preview -->
+      <div class="table-wrap" th:if="${!#lists.isEmpty(pedidos)}">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Platos</th>
+              <th>Mesa / Cliente</th>
+              <th>Hora</th>
+              <th>Total</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="item : ${pedidos}">
+              <td class="strong" th:text="|#${item.pedido.id}|">#1</td>
+              <td>
+                <span th:text="${#strings.listJoin(item.lineas.![productoNombre], ', ')}">Hamburguesa</span>
+              </td>
+              <td>
+                <span class="strong">
+                  <span th:if="${item.pedido.tipoPedido == 'MESA'}" th:text="|Mesa ${item.mesaNumero != null ? item.mesaNumero : '?'}|">Mesa 1</span>
+                  <span th:if="${item.pedido.tipoPedido == 'DOMICILIO'}">🛵 Domicilio</span>
+                  <span th:if="${item.pedido.tipoPedido == 'LLEVAR'}">🛍️ Para Llevar</span>
+                </span>
+                <small class="table-sub" th:if="${item.pedido.nombreCliente != null}" th:text="${item.pedido.nombreCliente}">Cliente</small>
+              </td>
+              <td th:text="${#temporals.format(item.pedido.fechaHora, 'HH:mm')}">12:30</td>
+              <td class="strong" style="color: #ffb300;" th:text="|$${#numbers.formatDecimal(item.pedido.total, 1, 'POINT', 0, 'POINT')}|">$0</td>
+              <td>
+                <span class="status-pill"
+                      th:classappend="${' status-' + #strings.toLowerCase(item.pedido.estado)}"
+                      th:text="${#strings.replace(item.pedido.estado, '_', ' ')}">
+                  RECIBIDO
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="empty-state" th:if="${#lists.isEmpty(pedidos)}">
+        <span class="empty-mark">🔥</span>
+        <h2>Sin pedidos pendientes</h2>
+        <p>Los pedidos que hagan los clientes en la carta digital aparecerán aquí.</p>
+      </div>
+    </main>
+  </div>
+  <script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pedidos en Vivo | Asados al Carbón</title>
+  <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+<body>
+  <div class="app-shell">
+    <aside th:replace="~{fragments :: sidebar('pedidos')}"></aside>
+    <main class="main-content">
+      <header th:replace="~{fragments :: topbar('Gestión de Pedidos')}"></header>
+      <div th:replace="~{fragments :: flash}"></div>
+
+      <section class="page-intro">
+        <div>
+          <p class="eyebrow">COCINA Y SALA EN VIVO</p>
+          <p class="muted">Controla todos los pedidos que llegan desde la mesa o por WhatsApp.</p>
+        </div>
+        <form class="filter-form" method="get" th:action="@{/admin/pedidos}">
+          <label class="sr-only" for="estadoFiltro">Filtrar por estado</label>
+          <select id="estadoFiltro" name="estado">
+            <option value="">Todos los pedidos activos</option>
+            <option th:each="opcion : ${estados}"
+                    th:value="${opcion}"
+                    th:text="${#strings.replace(opcion, '_', ' ')}"
+                    th:selected="${estado == opcion}">
+              RECIBIDO
+            </option>
+          </select>
+          <button class="button button-secondary" type="submit">Filtrar</button>
+        </form>
+      </section>
+
+      <div class="table-wrap" th:if="${!#lists.isEmpty(pedidos)}">
+        <table>
+          <thead>
+            <tr>
+              <th>Pedido</th>
+              <th>Detalle y Platos</th>
+              <th>Destino / Cliente</th>
+              <th>Hora</th>
+              <th>Total</th>
+              <th>Estado y Avance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="item : ${pedidos}">
+              <td class="strong" th:text="|#${item.pedido.id}|">#1</td>
+              <td>
+                <ul class="order-lines" style="list-style: none; padding: 0; margin: 0;">
+                  <li th:each="linea : ${item.lineas}" style="margin-bottom: 6px;">
+                    <strong th:text="|${linea.detalle.cantidad}x ${linea.productoNombre}${linea.varianteNombre != null ? ' (' + linea.varianteNombre + ')' : ''}|">1x Plato</strong>
+                    <div th:if="${!#lists.isEmpty(linea.adicionales)}" style="padding-left: 10px;">
+                      <small style="color: #ff9800;" th:each="adic : ${linea.adicionales}" th:text="|＋ ${adic.nombre}|">+ Extra</small>
+                    </div>
+                    <div th:if="${linea.detalle.observacion != null and !#strings.isEmpty(linea.detalle.observacion)}" style="padding-left: 10px;">
+                      <small class="table-sub" th:text="|👉 ${linea.detalle.observacion}|">Nota</small>
+                    </div>
+                  </li>
+                </ul>
+                <div th:if="${item.pedido.observaciones != null and !#strings.isEmpty(item.pedido.observaciones)}" style="margin-top: 6px; padding: 4px 8px; background: rgba(255, 152, 0, 0.1); border-radius: 4px;">
+                  <small style="color: #ff9800; font-weight: 700;" th:text="|📝 ${item.pedido.observaciones}|">Nota general</small>
+                </div>
+              </td>
+              <td>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                  <span class="strong">
+                    <span th:if="${item.pedido.tipoPedido == 'MESA'}" th:text="|📍 Mesa ${item.mesaNumero != null ? item.mesaNumero : '?'}|">Mesa</span>
+                    <span th:if="${item.pedido.tipoPedido == 'DOMICILIO'}">🛵 Domicilio</span>
+                    <span th:if="${item.pedido.tipoPedido == 'LLEVAR'}">🛍️ Para Llevar</span>
+                  </span>
+                  <span th:if="${item.pedido.nombreCliente != null}" th:text="${item.pedido.nombreCliente}" style="font-size: 12px; color: #d4d4d8;">Nombre</span>
+                  <small th:if="${item.pedido.telefono != null}" th:text="${item.pedido.telefono}" class="table-sub">Teléfono</small>
+                  <small th:if="${item.pedido.direccion != null}" th:text="${item.pedido.direccion}" style="color: #ffb300; font-size: 11px;">Dirección</small>
+                </div>
+              </td>
+              <td th:text="${#temporals.format(item.pedido.fechaHora, 'HH:mm')}">12:30</td>
+              <td class="strong" style="color: #ffb300;" th:text="|$${#numbers.formatDecimal(item.pedido.total, 1, 'POINT', 0, 'POINT')}|">$0</td>
+              <td>
+                <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start;">
+                  <span class="status-pill"
+                        th:classappend="${' status-' + #strings.toLowerCase(item.pedido.estado)}"
+                        th:text="${#strings.replace(item.pedido.estado, '_', ' ')}">
+                    RECIBIDO
+                  </span>
+                  <form class="inline-action"
+                        th:if="${item.pedido.estado == 'RECIBIDO' or item.pedido.estado == 'EN_PREPARACION' or item.pedido.estado == 'LISTO'}"
+                        th:action="@{/admin/pedidos/estado}"
+                        method="post">
+                    <input type="hidden" name="id" th:value="${item.pedido.id}">
+                    <select name="estado" aria-label="Siguiente estado" style="font-size: 11px; padding: 3px 6px;">
+                      <option th:if="${item.pedido.estado == 'RECIBIDO'}" value="EN_PREPARACION">Pasar a Cocina</option>
+                      <option th:if="${item.pedido.estado == 'EN_PREPARACION'}" value="LISTO">Marcar Listo</option>
+                      <option th:if="${item.pedido.estado == 'LISTO'}" value="ENTREGADO">Entregado</option>
+                      <option value="CANCELADO">Cancelar</option>
+                    </select>
+                    <button class="icon-action" type="submit" title="Actualizar estado" aria-label="Actualizar estado">→</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="empty-state" th:if="${#lists.isEmpty(pedidos)}">
+        <span class="empty-mark">🔥</span>
+        <h2>Sin pedidos en esta vista</h2>
+        <p>Los pedidos realizados por los clientes en la carta o vía WhatsApp aparecerán aquí en tiempo real.</p>
+      </div>
+    </main>
+  </div>
+  <script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

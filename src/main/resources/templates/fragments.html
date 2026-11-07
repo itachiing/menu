@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Fragmentos - Asados al Carbón</title>
+</head>
+<body>
+
+  <!-- Sidebar navigation fragment -->
+  <aside th:fragment="sidebar(active)" class="sidebar">
+    <a class="brand" th:href="@{/}">
+      <span class="brand-mark">🔥</span>
+      <span>ASADOS<small>AL CARBÓN</small></span>
+    </a>
+
+    <div class="nav-caption">OPERACIÓN</div>
+    <a class="nav-link" th:classappend="${active == 'home'} ? ' is-active'" th:href="@{/}">
+      <span>01</span> Resumen
+    </a>
+    <a class="nav-link" th:classappend="${active == 'pedidos'} ? ' is-active'" th:href="@{/admin/pedidos}">
+      <span>02</span> Pedidos
+    </a>
+
+    <div class="nav-caption" th:if="${isAdmin}">CARTA Y SALA</div>
+    <a class="nav-link" th:if="${isAdmin}" th:classappend="${active == 'productos'} ? ' is-active'" th:href="@{/admin/productos}">
+      <span>03</span> Productos
+    </a>
+    <a class="nav-link" th:if="${isAdmin}" th:classappend="${active == 'categorias'} ? ' is-active'" th:href="@{/admin/categorias}">
+      <span>04</span> Categorías
+    </a>
+    <a class="nav-link" th:if="${isAdmin}" th:classappend="${active == 'variantes'} ? ' is-active'" th:href="@{/admin/variantes}">
+      <span>05</span> Variantes
+    </a>
+    <a class="nav-link" th:if="${isAdmin}" th:classappend="${active == 'adicionales'} ? ' is-active'" th:href="@{/admin/adicionales}">
+      <span>06</span> Adicionales
+    </a>
+    <a class="nav-link" th:if="${isAdmin}" th:classappend="${active == 'mesas'} ? ' is-active'" th:href="@{/admin/mesas}">
+      <span>07</span> Mesas (QR)
+    </a>
+
+    <div class="nav-caption" th:if="${isAdmin}">CONFIGURACIÓN</div>
+    <a class="nav-link" th:if="${isAdmin}" th:classappend="${active == 'usuarios'} ? ' is-active'" th:href="@{/admin/usuarios}">
+      <span>08</span> Usuarios y roles
+    </a>
+
+    <div class="sidebar-bottom">
+      <a class="public-link" th:href="@{/menu}">
+        Ver carta con carrito <span aria-hidden="true">↗</span>
+      </a>
+      <div class="user-chip">
+        <span class="user-avatar"
+              th:text="${nombreUsuario != null and !#strings.isEmpty(nombreUsuario) ? #strings.substring(nombreUsuario, 0, 1).toUpperCase() : 'A'}">A</span>
+        <span class="user-meta">
+          <b th:text="${nombreUsuario}">Usuario</b>
+          <small th:if="${isAdmin}">Administrador</small>
+          <small th:if="${isCocina}">Cocina</small>
+          <small th:if="${isMesero}">Mesero</small>
+        </span>
+      </div>
+      <form th:if="${isAuthenticated}" th:action="@{/logout}" method="post">
+        <button class="logout-button" type="submit">Cerrar sesión</button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- Topbar fragment -->
+  <header th:fragment="topbar(title)" class="topbar">
+    <button class="menu-toggle" type="button" aria-label="Abrir navegación" data-menu-toggle>☰</button>
+    <div>
+      <p class="eyebrow">ASADOS AL CARBÓN / PANEL</p>
+      <h1 th:text="${title}">Panel</h1>
+    </div>
+    <a class="topbar-public" th:href="@{/menu}">
+      Ver menú público <span aria-hidden="true">↗</span>
+    </a>
+  </header>
+
+  <!-- Flash messages fragment -->
+  <div th:fragment="flash" class="flash-stack">
+    <div th:if="${mensaje}" class="notice notice-success" role="status" th:text="${mensaje}"></div>
+    <div th:if="${error}" class="notice notice-error" role="alert" th:text="${error}"></div>
+  </div>
+
+</body>
+</html>

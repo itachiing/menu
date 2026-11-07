@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Equipo y roles | Asados al Carbón</title>
+  <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+<body>
+  <div class="app-shell">
+    <aside th:replace="~{fragments :: sidebar('usuarios')}"></aside>
+    <main class="main-content">
+      <header th:replace="~{fragments :: topbar('Equipo y roles')}"></header>
+      <div th:replace="~{fragments :: flash}"></div>
+
+      <section class="page-intro">
+        <p class="muted">Cada perfil ve solo las herramientas que necesita para el servicio.</p>
+        <button class="button button-primary" type="button" data-form-toggle="usuarioForm">＋ Invitar usuario</button>
+      </section>
+
+      <section class="role-guide">
+        <article>
+          <span class="role-key">ADMIN</span>
+          <p>Acceso completo a carta, sala, pedidos y equipo.</p>
+        </article>
+        <article>
+          <span class="role-key">COCINA</span>
+          <p>Consulta y actualiza el estado de los pedidos.</p>
+        </article>
+        <article>
+          <span class="role-key">MESERO</span>
+          <p>Consulta pedidos y acompaña el servicio de sala.</p>
+        </article>
+      </section>
+
+      <form id="usuarioForm" class="editor-form" th:action="@{/admin/usuarios/guardar}" method="post" hidden>
+        <div class="form-heading">
+          <div>
+            <p class="eyebrow">ACCESO DE EQUIPO</p>
+            <h2 data-form-title data-new-title="Nuevo usuario">Nuevo usuario</h2>
+          </div>
+          <button class="icon-action" type="button" data-form-close="usuarioForm" aria-label="Cerrar formulario">×</button>
+        </div>
+        <input type="hidden" name="id">
+        <div class="form-grid">
+          <label>
+            Nombre completo
+            <input name="nombre" maxlength="100" required>
+          </label>
+          <label>
+            Nombre de usuario
+            <input name="username" maxlength="60" autocomplete="off" required>
+          </label>
+          <label>
+            Rol
+            <select name="rol" required>
+              <option th:each="rol : ${roles}" th:value="${rol}" th:text="${rol}">ADMIN</option>
+            </select>
+          </label>
+          <label data-password-label>Contraseña inicial
+            <input name="password" type="password" minlength="10" autocomplete="new-password" data-password-input>
+            <small class="field-hint">Mínimo 10 caracteres. Al editar, déjalo vacío para conservarla.</small>
+          </label>
+          <label class="check-label">
+            <input name="activo" type="checkbox" value="true" checked>
+            Cuenta activa
+          </label>
+        </div>
+        <div class="form-actions">
+          <button class="button button-secondary" type="button" data-form-close="usuarioForm">Cancelar</button>
+          <button class="button button-primary" type="submit">Guardar usuario</button>
+        </div>
+      </form>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Persona</th>
+              <th>Usuario</th>
+              <th>Rol</th>
+              <th>Estado</th>
+              <th class="align-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="usuario : ${usuarios}">
+              <td class="strong" th:text="${usuario.nombre}">Nombre</td>
+              <td th:text="${usuario.username}">usuario</td>
+              <td><span class="role-key" th:text="${usuario.rol}">ADMIN</span></td>
+              <td>
+                <span class="status-pill"
+                      th:classappend="${usuario.activo} ? ' status-listo' : ' status-neutral'"
+                      th:text="${usuario.activo ? 'Activo' : 'Desactivado'}">
+                  Activo
+                </span>
+              </td>
+              <td class="row-actions">
+                <button class="icon-action"
+                        type="button"
+                        title="Editar usuario"
+                        aria-label="Editar usuario"
+                        data-edit-form="usuarioForm"
+                        th:attr="data-id=${usuario.id},data-nombre=${usuario.nombre},data-username=${usuario.username},data-rol=${usuario.rol},data-activo=${usuario.activo}">
+                  ✎
+                </button>
+                <form th:action="@{/admin/usuarios/eliminar}"
+                      method="post"
+                      data-confirm="¿Eliminar este usuario? Esta acción no se puede deshacer.">
+                  <input type="hidden" name="id" th:value="${usuario.id}">
+                  <button class="icon-action danger-action"
+                          type="submit"
+                          title="Eliminar usuario"
+                          aria-label="Eliminar usuario">
+                    ×
+                  </button>
+                </form>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

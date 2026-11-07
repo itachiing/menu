@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Menú Digital | Asados al Carbón</title>
+  <link rel="stylesheet" th:href="@{/css/estilos.css}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="public-menu flame-theme">
+
+  <!-- Header superior -->
+  <header class="public-header">
+    <a class="brand brand-flame" th:href="@{/menu}">
+      <span class="brand-mark">🔥</span>
+      <span>ASADOS<small>AL CARBÓN</small></span>
+    </a>
+
+    <div class="header-badges">
+      <span id="mesaBadge" class="mesa-badge" th:if="${mesaPreseleccionada != null and !#strings.isEmpty(mesaPreseleccionada)}">
+        📍 Mesa <span th:text="${mesaPreseleccionada}">1</span>
+      </span>
+      <a class="staff-link" th:href="@{/login}">Acceso equipo <span>↗</span></a>
+    </div>
+  </header>
+
+  <!-- Hero banner -->
+  <section class="menu-hero">
+    <div class="hero-inner">
+      <span class="flame-pill">🔥 SABOR QUE ENCIENDE</span>
+      <h1>Nuestra Carta a la Brasa</h1>
+      <p>Selecciona tus platos, arma tu pedido y envíalo directo a nuestro WhatsApp.</p>
+      
+      <div class="hero-order-modes">
+        <button type="button" class="mode-pill active" data-mode-btn="MESA" onclick="cambiarModo('MESA')">📍 En Mesa (QR)</button>
+        <button type="button" class="mode-pill" data-mode-btn="DOMICILIO" onclick="cambiarModo('DOMICILIO')">🛵 A Domicilio</button>
+        <button type="button" class="mode-pill" data-mode-btn="LLEVAR" onclick="cambiarModo('LLEVAR')">🛍️ Para Llevar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Barra de categorías fija al hacer scroll -->
+  <nav class="categories-nav" aria-label="Categorías del menú">
+    <div class="categories-scroll">
+      <button type="button" class="cat-pill active" onclick="filtrarCategoria('todas', this)">🔥 Todos</button>
+      <button type="button"
+              class="cat-pill"
+              th:each="cat : ${menu}"
+              th:text="${cat.categoria.nombre}"
+              th:attr="onclick=|filtrarCategoria('cat-${cat.categoria.id}', this)|">
+        Hamburguesas
+      </button>
+    </div>
+  </nav>
+
+  <!-- Catálogo de productos -->
+  <main class="menu-main">
+    <div th:each="cat : ${menu}" class="menu-section-category" th:id="|cat-${cat.categoria.id}|">
+      <div class="category-heading">
+        <h2 th:text="${cat.categoria.nombre}">Hamburguesas</h2>
+        <span class="category-divider"></span>
+      </div>
+
+      <div class="menu-grid">
+        <article class="menu-card"
+                 th:each="pm : ${cat.productos}"
+                 th:attr="data-id=${pm.producto.id},
+                          data-nombre=${pm.producto.nombre},
+                          data-precio=${pm.producto.precio},
+                          data-categoria=${cat.categoria.nombre}">
+          <div class="card-body">
+            <div class="card-header-row">
+              <span class="card-category-tag" th:text="${cat.categoria.nombre}">Categoría</span>
+              <span class="card-price" th:text="|$${#numbers.formatDecimal(pm.producto.precio, 1, 'POINT', 0, 'POINT')}|">$15.000</span>
+            </div>
+            
+            <h3 class="card-title" th:text="${pm.producto.nombre}">Burguer al Carbón</h3>
+            <p class="card-desc" th:text="${pm.producto.descripcion}">Ingredientes deliciosos de temporada.</p>
+
+            <!-- Variantes si existen -->
+            <div class="card-variants" th:if="${!#lists.isEmpty(pm.variantes)}">
+              <label class="variant-label">Opción / Tamaño:</label>
+              <select class="variant-select" th:attr="data-product-id=${pm.producto.id}">
+                <option th:each="v : ${pm.variantes}"
+                        th:value="${v.id}"
+                        th:attr="data-precio=${v.precio}"
+                        th:text="|${v.nombre} ($${#numbers.formatDecimal(v.precio, 1, 'POINT', 0, 'POINT')})|">
+                  Opción
+                </option>
+              </select>
+            </div>
+
+            <!-- Botones de compra -->
+            <div class="card-actions">
+              <div class="qty-control" th:id="|qty-ctrl-${pm.producto.id}|" style="display: none;">
+                <button type="button" class="btn-qty" th:attr="onclick=|modificarCantidad(${pm.producto.id}, -1)|">−</button>
+                <span class="qty-num" th:id="|qty-val-${pm.producto.id}|">1</span>
+                <button type="button" class="btn-qty" th:attr="onclick=|modificarCantidad(${pm.producto.id}, 1)|">+</button>
+              </div>
+
+              <button type="button"
+                      class="btn-add-cart"
+                      th:id="|btn-add-${pm.producto.id}|"
+                      th:attr="onclick=|agregarProducto(${pm.producto.id}, '${pm.producto.nombre}', ${pm.producto.precio})|">
+                <span>+ Agregar</span>
+              </button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <div class="empty-state menu-empty" th:if="${#lists.isEmpty(menu)}">
+      <span class="empty-icon">🔥</span>
+      <h2>Estamos encendiendo el carbón</h2>
+      <p>Pronto estarán disponibles todos nuestros platos.</p>
+    </div>
+  </main>
+
+  <!-- Barra flotante del carrito (Bottom Bar) -->
+  <aside id="floatingCart" class="floating-cart" style="display: none;">
+    <div class="cart-bar-content">
+      <div class="cart-bar-info">
+        <span class="cart-icon">🛒</span>
+        <div>
+          <strong id="cartCountText">0 productos</strong>
+          <span class="cart-total-badge" id="cartTotalText">$0</span>
+        </div>
+      </div>
+      <button type="button" class="btn-view-cart" onclick="abrirModalCarrito()">
+        Ver Pedido 🔥
+      </button>
+    </div>
+  </aside>
+
+  <!-- Modal del Carrito y Envío a WhatsApp -->
+  <div id="cartModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <div>
+          <span class="eyebrow-red">ASADOS AL CARBÓN</span>
+          <h2>Tu Pedido</h2>
+        </div>
+        <button type="button" class="modal-close" onclick="cerrarModalCarrito()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Selector de Tipo de Pedido -->
+        <div class="order-mode-tabs">
+          <label class="mode-tab">
+            <input type="radio" name="modalTipoPedido" value="MESA" checked onchange="actualizarCamposModo()">
+            <span>📍 En Mesa</span>
+          </label>
+          <label class="mode-tab">
+            <input type="radio" name="modalTipoPedido" value="DOMICILIO" onchange="actualizarCamposModo()">
+            <span>🛵 Domicilio</span>
+          </label>
+          <label class="mode-tab">
+            <input type="radio" name="modalTipoPedido" value="LLEVAR" onchange="actualizarCamposModo()">
+            <span>🛍️ Para Llevar</span>
+          </label>
+        </div>
+
+        <!-- Campos condicionales según el modo -->
+        <div class="client-form-grid">
+          <div id="campoMesaWrap" class="form-group">
+            <label for="clienteMesa">Número o Código de Mesa <span class="req">*</span></label>
+            <input type="text"
+                   id="clienteMesa"
+                   placeholder="Ej: 1, 2 o código QR"
+                   th:value="${mesaPreseleccionada}"
+                   autocomplete="off">
+            <small class="hint">Si escaneaste el QR en la mesa, ya está listo.</small>
+          </div>
+
+          <div id="campoNombreWrap" class="form-group">
+            <label for="clienteNombre">Tu Nombre <span class="req">*</span></label>
+            <input type="text" id="clienteNombre" placeholder="¿Cómo te llamas?" autocomplete="name">
+          </div>
+
+          <div id="campoTelefonoWrap" class="form-group">
+            <label for="clienteTelefono">Teléfono / WhatsApp <span class="req">*</span></label>
+            <input type="tel" id="clienteTelefono" placeholder="Número para confirmar" autocomplete="tel">
+          </div>
+
+          <div id="campoDireccionWrap" class="form-group form-full" style="display: none;">
+            <label for="clienteDireccion">Dirección de Entrega y Barrio <span class="req">*</span></label>
+            <input type="text" id="clienteDireccion" placeholder="Calle, Carrera, Barrio y datos de referencia">
+          </div>
+        </div>
+
+        <!-- Lista de productos en el carrito -->
+        <div class="cart-items-section">
+          <h3>Productos seleccionados</h3>
+          <div id="cartItemsList" class="cart-items-list">
+            <!-- Renderizado dinámicamente -->
+          </div>
+        </div>
+
+        <!-- Adicionales y Extras opcionales -->
+        <div class="adicionales-section" th:if="${!#lists.isEmpty(adicionales)}">
+          <h3>¿Deseas adiciones o extras?</h3>
+          <div class="adicionales-list">
+            <label class="adicional-chip" th:each="adic : ${adicionales}">
+              <input type="checkbox"
+                     class="adicional-check"
+                     th:value="${adic.id}"
+                     th:attr="data-nombre=${adic.nombre},data-precio=${adic.precio}"
+                     onchange="recalcularTotal()">
+              <span class="adic-nombre" th:text="${adic.nombre}">Papas</span>
+              <span class="adic-precio" th:text="|+$${#numbers.formatDecimal(adic.precio, 1, 'POINT', 0, 'POINT')}|">+$3.000</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Observaciones generales -->
+        <div class="form-group form-full">
+          <label for="clienteNotas">Notas para la cocina (Opcional)</label>
+          <textarea id="clienteNotas" rows="2" placeholder="Ej: Salsa tártara aparte, sin cebolla, traer servilletas extra..."></textarea>
+        </div>
+
+        <!-- Resumen de Totales -->
+        <div class="cart-totals-summary">
+          <div class="total-row">
+            <span>Subtotal platos:</span>
+            <strong id="summarySubtotal">$0</strong>
+          </div>
+          <div class="total-row" id="rowAdicionales" style="display: none;">
+            <span>Extras seleccionados:</span>
+            <strong id="summaryAdicionales">$0</strong>
+          </div>
+          <div class="total-row total-highlight">
+            <span>TOTAL A PAGAR:</span>
+            <strong id="summaryTotal">$0</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModalCarrito()">Seguir pidiendo</button>
+        <button type="button" id="btnConfirmarPedido" class="btn-whatsapp-confirm" onclick="enviarPedido()">
+          <span>Enviar Pedido a WhatsApp 🔥</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Éxito / Confirmación -->
+  <div id="successModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-sheet modal-sheet-success">
+      <div class="success-icon">🔥</div>
+      <h2>¡Pedido Registrado con Éxito!</h2>
+      <p>Tu orden ha sido registrada en el sistema y se abrió tu WhatsApp para confirmar el pedido con el asadero.</p>
+      
+      <div class="order-confirmed-box">
+        <span class="order-id-label">NÚMERO DE PEDIDO</span>
+        <strong id="confirmedOrderId" class="order-id-num">#0</strong>
+      </div>
+
+      <p class="muted">Si no se abrió WhatsApp automáticamente, pulsa el botón de abajo:</p>
+
+      <a id="btnReabrirWhatsapp" href="#" target="_blank" class="btn-whatsapp-confirm" style="display: inline-flex; text-decoration: none; margin-bottom: 12px;">
+        Abrir WhatsApp Ahora 📲
+      </a>
+
+      <button type="button" class="btn-cancel" onclick="reiniciarPedido()">Hacer otro pedido</button>
+    </div>
+  </div>
+
+  <footer class="public-footer">
+    <div class="footer-inner">
+      <p><strong>ASADOS AL CARBÓN</strong> · SABOR QUE ENCIENDE</p>
+      <p class="footer-sub">Hamburguesas · Salchipapas · Suizos · Gratinados · Shawarma · Picadas</p>
+      <a th:href="@{/login}">Acceso administrativo</a>
+    </div>
+  </footer>
+
+  <!-- Datos y scripts de cliente -->
+  <script th:inline="javascript">
+    /*<![CDATA[*/
+    const WHATSAPP_NUMERO = /*[[${whatsappNumero}]]*/ '573000000000';
+    const RESTAURANTE_NOMBRE = /*[[${restauranteNombre}]]*/ 'Asados al Carbón';
+    const MESA_INICIAL = /*[[${mesaPreseleccionada}]]*/ '';
+    /*]]>*/
+  </script>
+
+  <script>
+    // Estado del carrito en memoria
+    let carrito = {}; // { productoId: { id, nombre, precio, cantidad, observacion } }
+    let modoPedidoActual = 'MESA';
+    let ultimoUrlWhatsapp = '';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (MESA_INICIAL) {
+        modoPedidoActual = 'MESA';
+        const radioMesa = document.querySelector('input[name="modalTipoPedido"][value="MESA"]');
+        if (radioMesa) radioMesa.checked = true;
+      }
+      actualizarCamposModo();
+    });
+
+    function cambiarModo(modo) {
+      modoPedidoActual = modo;
+      document.querySelectorAll('[data-mode-btn]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.modeBtn === modo);
+      });
+      const radio = document.querySelector(`input[name="modalTipoPedido"][value="${modo}"]`);
+      if (radio) radio.checked = true;
+      actualizarCamposModo();
+    }
+
+    function actualizarCamposModo() {
+      const selected = document.querySelector('input[name="modalTipoPedido"]:checked');
+      if (selected) {
+        modoPedidoActual = selected.value;
+      }
+
+      const campoMesaWrap = document.getElementById('campoMesaWrap');
+      const campoDireccionWrap = document.getElementById('campoDireccionWrap');
+      const campoNombreWrap = document.getElementById('campoNombreWrap');
+      const campoTelefonoWrap = document.getElementById('campoTelefonoWrap');
+
+      if (modoPedidoActual === 'MESA') {
+        campoMesaWrap.style.display = 'block';
+        campoDireccionWrap.style.display = 'none';
+        campoNombreWrap.querySelector('.req').style.display = 'none'; // opcional en mesa
+        campoTelefonoWrap.querySelector('.req').style.display = 'none';
+      } else if (modoPedidoActual === 'DOMICILIO') {
+        campoMesaWrap.style.display = 'none';
+        campoDireccionWrap.style.display = 'block';
+        campoNombreWrap.querySelector('.req').style.display = 'inline';
+        campoTelefonoWrap.querySelector('.req').style.display = 'inline';
+      } else { // LLEVAR
+        campoMesaWrap.style.display = 'none';
+        campoDireccionWrap.style.display = 'none';
+        campoNombreWrap.querySelector('.req').style.display = 'inline';
+        campoTelefonoWrap.querySelector('.req').style.display = 'inline';
+      }
+    }
+
+    function filtrarCategoria(catId, btn) {
+      document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      if (catId === 'todas') {
+        document.querySelectorAll('.menu-section-category').forEach(sec => sec.style.display = 'block');
+      } else {
+        document.querySelectorAll('.menu-section-category').forEach(sec => {
+          sec.style.display = (sec.id === catId) ? 'block' : 'none';
+        });
+      }
+    }
+
+    function agregarProducto(id, nombre, precio) {
+      if (!carrito[id]) {
+        carrito[id] = { id, nombre, precio: Number(precio), cantidad: 1, observacion: '' };
+      } else {
+        carrito[id].cantidad++;
+      }
+      actualizarUiProducto(id);
+      actualizarBarraCarrito();
+    }
+
+    function modificarCantidad(id, delta) {
+      if (!carrito[id]) return;
+      carrito[id].cantidad += delta;
+      if (carrito[id].cantidad <= 0) {
+        delete carrito[id];
+      }
+      actualizarUiProducto(id);
+      actualizarBarraCarrito();
+      renderizarListaCarrito();
+    }
+
+    function actualizarUiProducto(id) {
+      const btnAdd = document.getElementById(`btn-add-${id}`);
+      const qtyCtrl = document.getElementById(`qty-ctrl-${id}`);
+      const qtyVal = document.getElementById(`qty-val-${id}`);
+
+      if (!btnAdd || !qtyCtrl) return;
+
+      const item = carrito[id];
+      if (item && item.cantidad > 0) {
+        btnAdd.style.display = 'none';
+        qtyCtrl.style.display = 'inline-flex';
+        qtyVal.textContent = item.cantidad;
+      } else {
+        btnAdd.style.display = 'inline-flex';
+        qtyCtrl.style.display = 'none';
+      }
+    }
+
+    function calcularTotales() {
+      let subtotalPlatos = 0;
+      let totalItems = 0;
+
+      Object.values(carrito).forEach(item => {
+        subtotalPlatos += item.precio * item.cantidad;
+        totalItems += item.cantidad;
+      });
+
+      let subtotalAdicionales = 0;
+      document.querySelectorAll('.adicional-check:checked').forEach(cb => {
+        subtotalAdicionales += Number(cb.dataset.precio || 0);
+      });
+
+      const total = subtotalPlatos + subtotalAdicionales;
+      return { subtotalPlatos, subtotalAdicionales, total, totalItems };
+    }
+
+    function formatoPesos(num) {
+      return '$' + Math.round(num).toLocaleString('es-CO');
+    }
+
+    function actualizarBarraCarrito() {
+      const { subtotalPlatos, totalItems } = calcularTotales();
+      const bar = document.getElementById('floatingCart');
+      if (totalItems > 0) {
+        bar.style.display = 'block';
+        document.getElementById('cartCountText').textContent = `${totalItems} ${totalItems === 1 ? 'producto' : 'productos'}`;
+        document.getElementById('cartTotalText').textContent = formatoPesos(subtotalPlatos);
+      } else {
+        bar.style.display = 'none';
+      }
+    }
+
+    function abrirModalCarrito() {
+      renderizarListaCarrito();
+      recalcularTotal();
+      document.getElementById('cartModal').style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function cerrarModalCarrito() {
+      document.getElementById('cartModal').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    function renderizarListaCarrito() {
+      const container = document.getElementById('cartItemsList');
+      container.innerHTML = '';
+
+      const items = Object.values(carrito);
+      if (items.length === 0) {
+        container.innerHTML = '<p class="empty-cart-text">No has agregado ningún producto todavía.</p>';
+        recalcularTotal();
+        return;
+      }
+
+      items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'cart-item-row';
+        row.innerHTML = `
+          <div class="item-info">
+            <strong>${item.nombre}</strong>
+            <small>${formatoPesos(item.precio)} c/u</small>
+            <input type="text"
+                   class="item-note-input"
+                   placeholder="Aclaración (ej: sin cebolla)"
+                   value="${item.observacion || ''}"
+                   oninput="carrito[${item.id}].observacion = this.value">
+          </div>
+          <div class="item-controls">
+            <button type="button" class="btn-qty" onclick="modificarCantidad(${item.id}, -1)">−</button>
+            <span class="qty-num">${item.cantidad}</span>
+            <button type="button" class="btn-qty" onclick="modificarCantidad(${item.id}, 1)">+</button>
+            <strong class="item-subtotal">${formatoPesos(item.precio * item.cantidad)}</strong>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+
+      recalcularTotal();
+    }
+
+    function recalcularTotal() {
+      const { subtotalPlatos, subtotalAdicionales, total } = calcularTotales();
+      document.getElementById('summarySubtotal').textContent = formatoPesos(subtotalPlatos);
+
+      const rowAdic = document.getElementById('rowAdicionales');
+      if (subtotalAdicionales > 0) {
+        rowAdic.style.display = 'flex';
+        document.getElementById('summaryAdicionales').textContent = formatoPesos(subtotalAdicionales);
+      } else {
+        rowAdic.style.display = 'none';
+      }
+
+      document.getElementById('summaryTotal').textContent = formatoPesos(total);
+    }
+
+    async function enviarPedido() {
+      const itemsList = Object.values(carrito);
+      if (itemsList.length === 0) {
+        alert('Por favor agrega al menos un plato a tu pedido.');
+        return;
+      }
+
+      const selectedMode = document.querySelector('input[name="modalTipoPedido"]:checked').value;
+      const mesaVal = document.getElementById('clienteMesa').value.trim();
+      const nombreVal = document.getElementById('clienteNombre').value.trim();
+      const telVal = document.getElementById('clienteTelefono').value.trim();
+      const dirVal = document.getElementById('clienteDireccion').value.trim();
+      const notasVal = document.getElementById('clienteNotas').value.trim();
+
+      // Validaciones
+      if (selectedMode === 'MESA' && !mesaVal) {
+        alert('Por favor indica el número o código de tu mesa.');
+        document.getElementById('clienteMesa').focus();
+        return;
+      }
+
+      if (selectedMode === 'DOMICILIO') {
+        if (!nombreVal) {
+          alert('Por favor escribe tu nombre.');
+          document.getElementById('clienteNombre').focus();
+          return;
+        }
+        if (!telVal) {
+          alert('Por favor escribe tu número de teléfono para el domicilio.');
+          document.getElementById('clienteTelefono').focus();
+          return;
+        }
+        if (!dirVal) {
+          alert('Por favor indica la dirección y barrio para la entrega.');
+          document.getElementById('clienteDireccion').focus();
+          return;
+        }
+      }
+
+      if (selectedMode === 'LLEVAR') {
+        if (!nombreVal) {
+          alert('Por favor escribe tu nombre.');
+          document.getElementById('clienteNombre').focus();
+          return;
+        }
+        if (!telVal) {
+          alert('Por favor escribe tu número de teléfono de contacto.');
+          document.getElementById('clienteTelefono').focus();
+          return;
+        }
+      }
+
+      // Adicionales seleccionados
+      const adicionalIds = [];
+      const adicionalesTexto = [];
+      document.querySelectorAll('.adicional-check:checked').forEach(cb => {
+        adicionalIds.push(Number(cb.value));
+        adicionalesTexto.push(`+ ${cb.dataset.nombre} (${formatoPesos(Number(cb.dataset.precio))})`);
+      });
+
+      // Payload para la API de Spring Boot
+      const itemsRequest = itemsList.map((item, index) => {
+        return {
+          productoId: item.id,
+          varianteId: null,
+          cantidad: item.cantidad,
+          observacion: item.observacion || null,
+          adicionalIds: index === 0 ? adicionalIds : [] // Asignar adicionales a la primera línea
+        };
+      });
+
+      const solicitud = {
+        tipoPedido: selectedMode,
+        mesaCodigo: selectedMode === 'MESA' ? mesaVal : null,
+        nombreCliente: nombreVal || (selectedMode === 'MESA' ? `Cliente Mesa ${mesaVal}` : 'Cliente'),
+        telefono: telVal || null,
+        direccion: selectedMode === 'DOMICILIO' ? dirVal : null,
+        observaciones: notasVal || null,
+        items: itemsRequest
+      };
+
+      const btn = document.getElementById('btnConfirmarPedido');
+      btn.disabled = true;
+      btn.textContent = 'Procesando pedido... ⏳';
+
+      try {
+        const respuesta = await fetch('/api/pedidos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(solicitud)
+        });
+
+        if (!respuesta.ok) {
+          const errData = await respuesta.json().catch(() => ({ error: 'Error al registrar pedido' }));
+          throw new Error(errData.error || 'No se pudo registrar el pedido');
+        }
+
+        const pedidoConfirmado = await respuesta.json();
+        const pedidoId = pedidoConfirmado.pedido.id;
+        const totalFinal = pedidoConfirmado.pedido.total;
+
+        // Construir mensaje estructurado para WhatsApp
+        const tipoDesc = selectedMode === 'MESA' ? `📍 Mesa: ${mesaVal}`
+                       : selectedMode === 'DOMICILIO' ? '🛵 Domicilio' : '🛍️ Para Llevar';
+
+        let lineasMsg = '';
+        itemsList.forEach(it => {
+          lineasMsg += `• ${it.cantidad}x ${it.nombre} (${formatoPesos(it.precio * it.cantidad)})\n`;
+          if (it.observacion) {
+            lineasMsg += `   └ Nota: ${it.observacion}\n`;
+          }
+        });
+
+        if (adicionalesTexto.length > 0) {
+          lineasMsg += `\n*Extras / Adiciones:*\n` + adicionalesTexto.map(e => `• ${e}`).join('\n') + `\n`;
+        }
+
+        const mensajeWa = `🔥 *NUEVO PEDIDO #${pedidoId} - ${RESTAURANTE_NOMBRE}* 🔥\n\n`
+          + `👤 *Cliente:* ${solicitud.nombreCliente}\n`
+          + `📋 *Tipo:* ${tipoDesc}\n`
+          + (telVal ? `📱 *Teléfono:* ${telVal}\n` : '')
+          + (dirVal ? `🏠 *Dirección:* ${dirVal}\n` : '')
+          + `-----------------------------------\n`
+          + `🛒 *DETALLE:*\n${lineasMsg}`
+          + `-----------------------------------\n`
+          + `💰 *TOTAL A PAGAR:* ${formatoPesos(totalFinal)}\n`
+          + (notasVal ? `📝 *Observaciones:* ${notasVal}\n` : '')
+          + `\n¡Gracias por preferir ${RESTAURANTE_NOMBRE}! 🔥`;
+
+        // Generar enlace WhatsApp
+        const cleanWa = WHATSAPP_NUMERO.replace(/[^0-9]/g, '');
+        const waUrl = `https://wa.me/${cleanWa}?text=${encodeURIComponent(mensajeWa)}`;
+        ultimoUrlWhatsapp = waUrl;
+
+        // Abrir WhatsApp automáticamente
+        window.open(waUrl, '_blank');
+
+        // Mostrar modal de éxito
+        cerrarModalCarrito();
+        document.getElementById('confirmedOrderId').textContent = `#${pedidoId}`;
+        document.getElementById('btnReabrirWhatsapp').href = waUrl;
+        document.getElementById('successModal').style.display = 'flex';
+
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Enviar Pedido a WhatsApp 🔥';
+      }
+    }
+
+    function reiniciarPedido() {
+      carrito = {};
+      document.querySelectorAll('.btn-add-cart').forEach(b => b.style.display = 'inline-flex');
+      document.querySelectorAll('.qty-control').forEach(q => q.style.display = 'none');
+      document.querySelectorAll('.adicional-check').forEach(cb => cb.checked = false);
+      document.getElementById('clienteNotas').value = '';
+      actualizarBarraCarrito();
+      document.getElementById('successModal').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+  </script>
+</body>
+</html>

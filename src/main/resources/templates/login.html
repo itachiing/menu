@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Acceso de Equipo | Asados al Carbón</title>
+  <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+<body class="login-page">
+  <main class="login-layout">
+    <!-- Left artistic banner -->
+    <section class="login-art" aria-label="Asados al Carbón, sabor que enciende">
+      <a class="brand brand-light" th:href="@{/menu}">
+        <span class="brand-mark">🔥</span>
+        <span>ASADOS<small>AL CARBÓN</small></span>
+      </a>
+      <div class="login-art-copy">
+        <p class="eyebrow">SABOR QUE ENCIENDE</p>
+        <h1>La brasa en su<br><em>punto exacto.</em></h1>
+        <p>Control de pedidos, sala y cocina en tiempo real.</p>
+      </div>
+      <div class="art-footer">
+        <span>HAMBURGUESAS · PICADAS</span>
+        <span>GRATINADOS · SUIZOS</span>
+      </div>
+    </section>
+
+    <!-- Right login form section -->
+    <section class="login-form-side">
+      <div class="login-form-wrap">
+        <p class="eyebrow">ACCESO DE EQUIPO</p>
+        <h2>Panel de Control</h2>
+        <p class="muted">Ingresa con tu cuenta de Asados al Carbón.</p>
+
+        <div th:if="${param.error}" class="notice notice-error" role="alert">
+          Usuario o contraseña incorrectos, o cuenta desactivada.
+        </div>
+        <div th:if="${param.logout}" class="notice notice-success" role="status">
+          Sesión cerrada correctamente.
+        </div>
+        <div th:if="${mensaje}" class="notice notice-success" role="status" th:text="${mensaje}">
+          Cuenta creada con éxito.
+        </div>
+
+        <form th:action="@{/login}" method="post" class="stack-form">
+          <label for="username">
+            Usuario
+            <input id="username" name="username" type="text" autocomplete="username" required autofocus>
+          </label>
+          <label for="password">
+            Contraseña
+            <input id="password" name="password" type="password" autocomplete="current-password" required>
+          </label>
+          <button class="button button-primary button-wide" type="submit">
+            Entrar al panel <span aria-hidden="true">→</span>
+          </button>
+        </form>
+
+        <div style="margin-top: 20px; text-align: center; font-size: 13px;">
+          <span class="muted">¿No tienes cuenta? </span>
+          <a th:href="@{/registro}" style="color: #ff5722; font-weight: 700; text-decoration: underline;">Regístrate aquí</a>
+        </div>
+
+        <a class="back-link" th:href="@{/menu}">← Volver al menú de clientes</a>
+      </div>
+    </section>
+  </main>
+  <script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

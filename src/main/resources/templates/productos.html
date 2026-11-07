@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Productos | Asados al Carbón</title>
+  <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+<body>
+  <div class="app-shell">
+    <aside th:replace="~{fragments :: sidebar('productos')}"></aside>
+    <main class="main-content">
+      <header th:replace="~{fragments :: topbar('Productos')}"></header>
+      <div th:replace="~{fragments :: flash}"></div>
+
+      <section class="page-intro">
+        <p class="muted">Gestiona los platos y su disponibilidad en la carta.</p>
+        <button class="button button-primary" type="button" data-form-toggle="productoForm">＋ Nuevo producto</button>
+      </section>
+
+      <form id="productoForm" class="editor-form" th:action="@{/admin/productos/guardar}" method="post" hidden>
+        <div class="form-heading">
+          <div>
+            <p class="eyebrow">CARTA</p>
+            <h2 data-form-title data-new-title="Nuevo producto">Nuevo producto</h2>
+          </div>
+          <button class="icon-action" type="button" data-form-close="productoForm" aria-label="Cerrar formulario">×</button>
+        </div>
+
+        <input type="hidden" name="id">
+
+        <div class="form-grid">
+          <label>
+            Nombre
+            <input name="nombre" maxlength="100" required>
+          </label>
+
+          <label>
+            Categoría
+            <select name="categoriaId" required>
+              <option value="">Selecciona una categoría</option>
+              <option th:each="categoria : ${categorias}" th:value="${categoria.id}" th:text="${categoria.nombre}">Entradas</option>
+            </select>
+          </label>
+
+          <label>
+            Precio
+            <input name="precio" type="number" min="0" step="0.01" required>
+          </label>
+
+          <label>
+            URL de imagen
+            <input name="imagen" maxlength="255" placeholder="https://...">
+          </label>
+
+          <label class="form-span">
+            Descripción
+            <textarea name="descripcion" maxlength="300" rows="2"></textarea>
+          </label>
+
+          <label class="check-label">
+            <input type="hidden" name="_disponible" value="on">
+            <input name="disponible" type="checkbox" value="true" checked>
+            Disponible en la carta
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button class="button button-secondary" type="button" data-form-close="productoForm">Cancelar</button>
+          <button class="button button-primary" type="submit">Guardar producto</button>
+        </div>
+      </form>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Categoría</th>
+              <th>Precio</th>
+              <th>Disponibilidad</th>
+              <th class="align-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="producto : ${productos}">
+              <td>
+                <span class="strong" th:text="${producto.nombre}">Plato</span>
+                <small class="table-sub" th:text="${producto.descripcion}">Descripción</small>
+              </td>
+              <td th:text="${categorias.?[id == #vars.producto.categoriaId].size() > 0 ? categorias.?[id == #vars.producto.categoriaId][0].nombre : 'Sin categoría'}">Categoría</td>
+              <td th:text="|$${#numbers.formatDecimal(producto.precio, 1, 'POINT', 2, 'COMMA')}|">$0</td>
+              <td>
+                <span class="status-pill" th:classappend="${producto.disponible} ? ' status-listo' : ' status-neutral'" th:text="${producto.disponible ? 'Disponible' : 'Agotado'}">Disponible</span>
+              </td>
+              <td class="row-actions">
+                <button class="icon-action"
+                        type="button"
+                        title="Editar producto"
+                        aria-label="Editar producto"
+                        data-edit-form="productoForm"
+                        th:attr="data-id=${producto.id},data-nombre=${producto.nombre},data-categoria-id=${producto.categoriaId},data-precio=${producto.precio},data-imagen=${producto.imagen},data-descripcion=${producto.descripcion},data-disponible=${producto.disponible}">✎</button>
+                <form th:action="@{/admin/productos/eliminar}" method="post" data-confirm="¿Eliminar este producto?">
+                  <input type="hidden" name="id" th:value="${producto.id}">
+                  <button class="icon-action danger-action" type="submit" title="Eliminar producto" aria-label="Eliminar producto">×</button>
+                </form>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

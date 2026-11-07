@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Acceso restringido | Asados al Carbón</title>
+  <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+<body class="login-page">
+  <main class="denied-page">
+    <span class="brand-mark" style="background: linear-gradient(135deg, #ff5722, #ff9800); font-size: 24px;">🔥</span>
+    <p class="eyebrow" style="color: #ff5722;">PERMISOS INSUFICIENTES</p>
+    <h1>Esta zona no está<br>en tu servicio.</h1>
+    <p class="muted">Tu rol actual no cuenta con los permisos necesarios para acceder a esta sección de Asados al Carbón.</p>
+    <a class="button button-primary" th:href="@{/}">
+      Volver al panel <span aria-hidden="true">→</span>
+    </a>
+  </main>
+  <script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>
