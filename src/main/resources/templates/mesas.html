@@ -5,6 +5,156 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Mesas y Códigos QR | Asados al Carbón</title>
   <link rel="stylesheet" th:href="@{/css/estilos.css}">
+  <style>
+    /* Estilos específicos para visualización e impresión de códigos QR */
+    .qr-config-box {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .qr-config-input-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 280px;
+    }
+
+    .qr-config-input-group label {
+      font-weight: 700;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .qr-config-input-group input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      font-size: 13px;
+    }
+
+    .qr-thumb {
+      width: 48px;
+      height: 48px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      cursor: pointer;
+      transition: transform 0.2s ease;
+      background: #ffffff;
+      padding: 2px;
+    }
+
+    .qr-thumb:hover {
+      transform: scale(1.15);
+      border-color: #ff5722;
+    }
+
+    /* Modal de QR Individual */
+    .qr-card-preview {
+      background: #ffffff;
+      color: #111114;
+      border: 2px solid #ff5722;
+      border-radius: 16px;
+      padding: 28px 24px;
+      text-align: center;
+      max-width: 320px;
+      margin: 10px auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+
+    .qr-card-brand {
+      font-size: 18px;
+      font-weight: 900;
+      color: #111114;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+
+    .qr-card-slogan {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      color: #ff5722;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+
+    .qr-card-mesa-badge {
+      background: #111114;
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 800;
+      padding: 6px 18px;
+      border-radius: 20px;
+      display: inline-block;
+      margin-bottom: 14px;
+    }
+
+    .qr-card-img {
+      width: 200px;
+      height: 200px;
+      margin: 0 auto 14px;
+      display: block;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .qr-card-instructions {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4b5563;
+      line-height: 1.4;
+      margin: 0;
+    }
+
+    .qr-actions-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    /* Estilos de impresión */
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #printArea, #printArea * {
+        visibility: visible !important;
+      }
+      #printArea {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        display: flex !important;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+        background: #ffffff !important;
+        padding: 20px;
+      }
+      .qr-card-preview {
+        page-break-inside: avoid;
+        break-inside: avoid;
+        border: 2px dashed #000000 !important;
+        box-shadow: none !important;
+        margin: 10px;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="app-shell">
@@ -13,14 +163,29 @@
       <header th:replace="~{fragments :: topbar('Mesas y Códigos QR')}"></header>
       <div th:replace="~{fragments :: flash}"></div>
 
+      <!-- Barra de Configuración de Dominio para el QR -->
+      <div class="qr-config-box">
+        <div class="qr-config-input-group">
+          <label for="serverBaseUrl">🌐 Dominio o IP del Negocio:</label>
+          <input type="text"
+                 id="serverBaseUrl"
+                 placeholder="http://localhost:8085"
+                 title="Si pruebas desde celulares en tu WiFi, pon la IP de tu PC, ej: http://192.168.1.15:8085">
+        </div>
+        <button type="button" class="button button-primary" onclick="imprimirTodosQRs()">
+          🖨️ Imprimir Todos los QR de Sala
+        </button>
+      </div>
+
       <section class="page-intro">
         <div>
-          <p class="eyebrow">SALA Y QR</p>
-          <p class="muted">Cada mesa tiene su enlace QR único. Cuando el cliente escanea el código, la mesa queda preseleccionada para su pedido de WhatsApp.</p>
+          <p class="eyebrow">SALA Y PEDIDOS POR MESA</p>
+          <p class="muted">Haz clic en cualquier código QR para verlo en grande, descargarlo o imprimirlo en papel para colocarlo en las mesas del asadero.</p>
         </div>
-        <button class="button button-primary" type="button" data-form-toggle="mesaForm">＋ Nueva mesa</button>
+        <button class="button button-secondary" type="button" data-form-toggle="mesaForm">＋ Nueva mesa</button>
       </section>
 
+      <!-- Formulario para agregar / editar mesa -->
       <form id="mesaForm" class="editor-form" th:action="@{/admin/mesas/guardar}" method="post" hidden>
         <div class="form-heading">
           <div>
@@ -45,36 +210,48 @@
           </label>
         </div>
 
-        <p class="form-note">El código QR se genera automáticamente al guardar la mesa.</p>
-
         <div class="form-actions">
           <button class="button button-secondary" type="button" data-form-close="mesaForm">Cancelar</button>
           <button class="button button-primary" type="submit">Guardar mesa</button>
         </div>
       </form>
 
+      <!-- Tabla de Mesas con sus Códigos QR -->
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
+              <th>QR</th>
               <th>Mesa</th>
-              <th>Enlace QR Directo</th>
-              <th>Código Interno</th>
+              <th>Enlace que abre el cliente</th>
               <th>Estado</th>
               <th class="align-right">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr th:each="mesa : ${mesas}">
+            <tr th:each="mesa : ${mesas}" th:attr="data-mesa-num=${mesa.numero},data-mesa-code=${mesa.codigo}">
+              <td style="width: 60px;">
+                <img class="qr-thumb"
+                     alt="QR Mesa"
+                     title="Clic para ver e imprimir este QR"
+                     th:attr="onclick=|mostrarModalQR(${mesa.numero}, '${mesa.codigo}')|">
+              </td>
               <td class="strong">
                 📍 Mesa <span th:text="${mesa.numero}">1</span>
               </td>
               <td>
-                <a th:href="@{/menu(mesa=${mesa.numero})}" target="_blank" class="button button-secondary" style="font-size: 11px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px;">
-                  Abrir Carta Mesa <span th:text="${mesa.numero}">1</span> ↗
-                </a>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <button type="button"
+                          class="button button-secondary"
+                          style="font-size: 11px; padding: 5px 12px; display: inline-flex; align-items: center; gap: 6px;"
+                          th:attr="onclick=|mostrarModalQR(${mesa.numero}, '${mesa.codigo}')|">
+                    📲 Ver e Imprimir QR
+                  </button>
+                  <a th:href="@{/menu(mesa=${mesa.numero})}" target="_blank" class="text-link" style="font-size: 12px;">
+                    Probar enlace ↗
+                  </a>
+                </div>
               </td>
-              <td><code class="code-value" th:text="${mesa.codigo}">MESA-01</code></td>
               <td>
                 <span class="status-pill" th:classappend="${mesa.activa} ? ' status-listo' : ' status-neutral'" th:text="${mesa.activa ? 'Activa' : 'Inactiva'}">Activa</span>
               </td>
@@ -96,6 +273,131 @@
       </div>
     </main>
   </div>
+
+  <!-- Modal para Visualizar e Imprimir QR de una mesa -->
+  <div id="qrModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-sheet" style="max-width: 440px;">
+      <div class="modal-header">
+        <div>
+          <span class="eyebrow-red">CÓDIGO QR PARA MESA</span>
+          <h2 id="modalMesaTitulo">Mesa 1</h2>
+        </div>
+        <button type="button" class="modal-close" onclick="cerrarModalQR()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Tarjeta imprimible -->
+        <div id="qrCardElement" class="qr-card-preview">
+          <div class="qr-card-brand">🔥 ASADOS AL CARBÓN</div>
+          <div class="qr-card-slogan">Sabor que enciende</div>
+          <div class="qr-card-mesa-badge" id="cardMesaBadge">📍 MESA 1</div>
+          <img id="cardQrImage" class="qr-card-img" alt="Código QR de la mesa">
+          <p class="qr-card-instructions">
+            <strong>Escanea con tu cámara</strong><br>
+            para ver la carta y pedir por WhatsApp
+          </p>
+        </div>
+
+        <div class="qr-actions-row">
+          <button type="button" class="button button-primary" onclick="imprimirQRSolo()">
+            🖨️ Imprimir este QR
+          </button>
+          <a id="btnDescargarQr" href="#" download="qr-mesa.png" class="button button-secondary">
+            📥 Descargar
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Área oculta para impresión masiva de todas las mesas -->
+  <div id="printArea" style="display: none;"></div>
+
   <script th:src="@{/js/app.js}" defer></script>
+  <script>
+    let baseUrlActual = '';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const inputUrl = document.getElementById('serverBaseUrl');
+      baseUrlActual = window.location.origin;
+      inputUrl.value = baseUrlActual;
+
+      inputUrl.addEventListener('input', () => {
+        baseUrlActual = inputUrl.value.trim().replace(/\/+$/, '');
+        actualizarMiniaturasQR();
+      });
+
+      actualizarMiniaturasQR();
+    });
+
+    function getQrUrl(numeroMesa) {
+      const targetUrl = `${baseUrlActual}/menu?mesa=${numeroMesa}`;
+      return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=${encodeURIComponent(targetUrl)}`;
+    }
+
+    function actualizarMiniaturasQR() {
+      document.querySelectorAll('tr[data-mesa-num]').forEach(row => {
+        const num = row.dataset.mesaNum;
+        const img = row.querySelector('.qr-thumb');
+        if (img) {
+          img.src = getQrUrl(num);
+        }
+      });
+    }
+
+    function mostrarModalQR(numero, codigo) {
+      document.getElementById('modalMesaTitulo').textContent = `Mesa ${numero}`;
+      document.getElementById('cardMesaBadge').textContent = `📍 MESA ${numero}`;
+      
+      const qrUrl = getQrUrl(numero);
+      const img = document.getElementById('cardQrImage');
+      img.src = qrUrl;
+
+      const btnDescargar = document.getElementById('btnDescargarQr');
+      btnDescargar.href = qrUrl;
+      btnDescargar.download = `QR-Mesa-${numero}.png`;
+
+      document.getElementById('qrModal').style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function cerrarModalQR() {
+      document.getElementById('qrModal').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    function imprimirQRSolo() {
+      const cardHtml = document.getElementById('qrCardElement').outerHTML;
+      const printContainer = document.getElementById('printArea');
+      printContainer.innerHTML = cardHtml;
+      window.print();
+    }
+
+    function imprimirTodosQRs() {
+      const printContainer = document.getElementById('printArea');
+      printContainer.innerHTML = '';
+
+      document.querySelectorAll('tr[data-mesa-num]').forEach(row => {
+        const num = row.dataset.mesaNum;
+        const qrUrl = getQrUrl(num);
+
+        const card = document.createElement('div');
+        card.className = 'qr-card-preview';
+        card.innerHTML = `
+          <div class="qr-card-brand">🔥 ASADOS AL CARBÓN</div>
+          <div class="qr-card-slogan">Sabor que enciende</div>
+          <div class="qr-card-mesa-badge">📍 MESA ${num}</div>
+          <img src="${qrUrl}" class="qr-card-img" alt="QR Mesa ${num}">
+          <p class="qr-card-instructions">
+            <strong>Escanea con tu cámara</strong><br>
+            para ver la carta y pedir por WhatsApp
+          </p>
+        `;
+        printContainer.appendChild(card);
+      });
+
+      window.print();
+    }
+  </script>
 </body>
 </html>
