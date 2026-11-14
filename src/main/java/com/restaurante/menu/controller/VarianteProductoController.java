@@ -14,9 +14,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.restaurante.menu.model.dao.ProductoDAO;
-import com.restaurante.menu.model.dao.VarianteProductoDAO;
-import com.restaurante.menu.vo.VarianteProducto;
+import com.restaurante.menu.entity.VarianteProducto;
+import com.restaurante.menu.service.VarianteProductoService;
 
 /**
  * Variantes de un producto (tamaños o porciones, por ejemplo picada para 2 o para 4 personas).
@@ -25,53 +24,37 @@ import com.restaurante.menu.vo.VarianteProducto;
 @RequestMapping("/api")
 public class VarianteProductoController {
 
-	private final VarianteProductoDAO varianteDAO;
-	private final ProductoDAO productoDAO;
+	private final VarianteProductoService varianteService;
 
-	public VarianteProductoController(VarianteProductoDAO varianteDAO, ProductoDAO productoDAO) {
-		this.varianteDAO = varianteDAO;
-		this.productoDAO = productoDAO;
+	public VarianteProductoController(VarianteProductoService varianteService) {
+		this.varianteService = varianteService;
 	}
 
 	@GetMapping("/productos/{productoId}/variantes")
 	public List<VarianteProducto> listarPorProducto(@PathVariable Integer productoId,
 			@RequestParam(defaultValue = "false") boolean soloDisponibles) {
-		Validaciones.encontrado(productoDAO.buscarPorId(productoId), "Producto");
-		return varianteDAO.listarPorProducto(productoId, soloDisponibles);
+		return varianteService.listarPorProducto(productoId, soloDisponibles);
 	}
 
 	@PostMapping("/productos/{productoId}/variantes")
 	@ResponseStatus(HttpStatus.CREATED)
 	public VarianteProducto crear(@PathVariable Integer productoId, @RequestBody VarianteProducto variante) {
-		Validaciones.encontrado(productoDAO.buscarPorId(productoId), "Producto");
-		variante.setProductoId(productoId);
-		validar(variante);
-		return varianteDAO.insertar(variante);
+		return varianteService.crear(productoId, variante);
 	}
 
 	@GetMapping("/variantes/{id}")
 	public VarianteProducto obtener(@PathVariable Integer id) {
-		return Validaciones.encontrado(varianteDAO.buscarPorId(id), "Variante");
+		return varianteService.obtener(id);
 	}
 
 	@PutMapping("/variantes/{id}")
 	public VarianteProducto actualizar(@PathVariable Integer id, @RequestBody VarianteProducto variante) {
-		obtener(id);
-		variante.setId(id);
-		validar(variante);
-		varianteDAO.actualizar(variante);
-		return obtener(id);
+		return varianteService.actualizar(id, variante);
 	}
 
 	@DeleteMapping("/variantes/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void eliminar(@PathVariable Integer id) {
-		obtener(id);
-		varianteDAO.eliminar(id);
-	}
-
-	private void validar(VarianteProducto variante) {
-		variante.setNombre(Validaciones.texto(variante.getNombre(), "nombre", 60));
-		Validaciones.precio(variante.getPrecio(), "precio");
+		varianteService.eliminar(id);
 	}
 }

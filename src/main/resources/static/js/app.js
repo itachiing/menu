@@ -50,6 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
           field.value = (val === 'null' || val === 'undefined') ? '' : val;
         }
       });
+
+      syncImagePreview(form);
     });
   });
 
@@ -60,6 +62,47 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!window.confirm(message)) {
         event.preventDefault();
       }
+    });
+  });
+
+  // 5. Vista previa de la foto de producto (archivo nuevo o imagen guardada)
+  document.querySelectorAll('[data-image-input]').forEach((input) => {
+    input.addEventListener('change', () => {
+      const form = input.form;
+      if (!form) return;
+
+      const preview = form.querySelector('[data-image-preview]');
+      const img = preview ? preview.querySelector('img') : null;
+      const label = form.querySelector('[data-image-button-text]');
+      const file = input.files && input.files[0];
+
+      if (!file || !img) {
+        syncImagePreview(form);
+        return;
+      }
+
+      if (img.dataset.objectUrl) {
+        URL.revokeObjectURL(img.dataset.objectUrl);
+      }
+      const objectUrl = URL.createObjectURL(file);
+      img.dataset.objectUrl = objectUrl;
+      img.src = objectUrl;
+      preview.classList.add('has-image');
+      if (label) {
+        label.textContent = file.name.length > 24 ? 'Foto seleccionada' : file.name;
+      }
+    });
+  });
+
+  document.querySelectorAll('[data-image-clear]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const form = button.closest('form');
+      if (!form) return;
+      const hidden = form.querySelector('input[name="imagen"]');
+      const input = form.querySelector('[data-image-input]');
+      if (hidden) hidden.value = '';
+      if (input) input.value = '';
+      syncImagePreview(form);
     });
   });
 
@@ -116,6 +159,37 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /**
+   * Sincroniza la vista previa de la foto con el campo oculto "imagen".
+   * @param {HTMLFormElement} form Formulario que contiene el bloque de imagen
+   */
+  function syncImagePreview(form) {
+    const preview = form.querySelector('[data-image-preview]');
+    if (!preview) return;
+
+    const img = preview.querySelector('img');
+    const hidden = form.querySelector('input[name="imagen"]');
+    const label = form.querySelector('[data-image-button-text]');
+    const src = hidden ? hidden.value.trim() : '';
+
+    if (img) {
+      if (img.dataset.objectUrl) {
+        URL.revokeObjectURL(img.dataset.objectUrl);
+        delete img.dataset.objectUrl;
+      }
+      if (src) {
+        img.src = src;
+      } else {
+        img.removeAttribute('src');
+      }
+    }
+
+    preview.classList.toggle('has-image', Boolean(src));
+    if (label) {
+      label.textContent = 'Subir foto';
+    }
+  }
+
+  /**
    * 6. Función auxiliar para inicializar y abrir formularios
    * @param {string} formId ID del elemento formulario
    * @param {boolean} editing Indica si es apertura en modo edición
@@ -127,6 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     form.reset();
     form.hidden = false;
+    syncImagePreview(form);
 
     // Actualizar encabezado del formulario ("Nuevo" vs "Editar")
     const title = form.querySelector('[data-form-title]');

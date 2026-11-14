@@ -6,7 +6,7 @@
   <title>Resumen | Asados al Carbón</title>
   <link rel="stylesheet" th:href="@{/css/estilos.css}">
 </head>
-<body>
+<body class="admin-panel">
   <div class="app-shell">
     <aside th:replace="~{fragments :: sidebar('home')}"></aside>
 
@@ -18,7 +18,7 @@
       <section class="welcome-row">
         <div>
           <p class="eyebrow">ASADOS AL CARBÓN</p>
-          <h2>El servicio, en su punto exacto 🔥</h2>
+          <h2>El servicio, en su punto exacto</h2>
           <p class="muted">Gestión integral de pedidos en mesa, domicilios y carta digital.</p>
         </div>
         <a class="button button-primary" th:href="@{/admin/pedidos}">
@@ -83,13 +83,13 @@
               <td>
                 <span class="strong">
                   <span th:if="${item.pedido.tipoPedido == 'MESA'}" th:text="|Mesa ${item.mesaNumero != null ? item.mesaNumero : '?'}|">Mesa 1</span>
-                  <span th:if="${item.pedido.tipoPedido == 'DOMICILIO'}">🛵 Domicilio</span>
-                  <span th:if="${item.pedido.tipoPedido == 'LLEVAR'}">🛍️ Para Llevar</span>
+                  <span th:if="${item.pedido.tipoPedido == 'DOMICILIO'}">Domicilio</span>
+                  <span th:if="${item.pedido.tipoPedido == 'LLEVAR'}">Para llevar</span>
                 </span>
                 <small class="table-sub" th:if="${item.pedido.nombreCliente != null}" th:text="${item.pedido.nombreCliente}">Cliente</small>
               </td>
               <td th:text="${#temporals.format(item.pedido.fechaHora, 'HH:mm')}">12:30</td>
-              <td class="strong" style="color: #ffb300;" th:text="|$${#numbers.formatDecimal(item.pedido.total, 1, 'POINT', 0, 'POINT')}|">$0</td>
+              <td class="strong amount" th:text="|$${#numbers.formatDecimal(item.pedido.total, 1, 'POINT', 0, 'POINT')}|">$0</td>
               <td>
                 <span class="status-pill"
                       th:classappend="${' status-' + #strings.toLowerCase(item.pedido.estado)}"
@@ -103,7 +103,11 @@
       </div>
 
       <div class="empty-state" th:if="${#lists.isEmpty(pedidos)}">
-        <span class="empty-mark">🔥</span>
+        <span class="empty-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z"/>
+          </svg>
+        </span>
         <h2>Sin pedidos pendientes</h2>
         <p>Los pedidos que hagan los clientes en la carta digital aparecerán aquí.</p>
       </div>

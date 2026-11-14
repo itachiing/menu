@@ -3,6 +3,7 @@ package com.restaurante.menu.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -11,7 +12,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
-import com.restaurante.menu.model.dao.UsuarioDAO;
+import com.restaurante.menu.repository.UsuarioRepository;
 
 @Configuration
 public class SecurityConfig {
@@ -22,8 +23,8 @@ public class SecurityConfig {
 	}
 
 	@Bean
-	UserDetailsService userDetailsService(UsuarioDAO usuarioDAO) {
-		return username -> usuarioDAO.buscarPorUsername(username)
+	UserDetailsService userDetailsService(UsuarioRepository usuarioRepository) {
+		return username -> usuarioRepository.buscarPorUsername(username)
 				.filter(u -> Boolean.TRUE.equals(u.getActivo()))
 				.map(u -> User.withUsername(u.getUsername())
 						.password(u.getPassword())
@@ -35,7 +36,7 @@ public class SecurityConfig {
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http.authorizeHttpRequests(auth -> auth
-				.requestMatchers("/", "/login", "/registro", "/css/**", "/js/**", "/images/**", "/menu", "/api/menu",
+				.requestMatchers("/", "/login", "/registro", "/css/**", "/js/**", "/images/**", "/uploads/**", "/menu", "/api/menu",
 						"/api/mesas/codigo/**")
 				.permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/pedidos")
@@ -48,6 +49,8 @@ public class SecurityConfig {
 				.hasRole("ADMIN")
 				.anyRequest()
 				.authenticated())
+			// Los endpoints /api/** se pueden probar desde Postman con autenticación básica.
+			.httpBasic(Customizer.withDefaults())
 			.csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
 			.formLogin(form -> form
 				.loginPage("/login")

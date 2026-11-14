@@ -9,7 +9,11 @@
   <!-- Sidebar navigation fragment -->
   <aside th:fragment="sidebar(active)" class="sidebar">
     <a class="brand" th:href="@{/}">
-      <span class="brand-mark">🔥</span>
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z"/>
+        </svg>
+      </span>
       <span>ASADOS<small>AL CARBÓN</small></span>
     </a>
 
@@ -20,27 +24,30 @@
     <a class="nav-link" th:classappend="${active == 'pedidos'} ? ' is-active'" th:href="@{/admin/pedidos}">
       <span>02</span> Pedidos
     </a>
+    <a class="nav-link" th:if="${isAdmin}" th:classappend="${active == 'reportes'} ? ' is-active'" th:href="@{/admin/reportes}">
+      <span>03</span> Reportes
+    </a>
 
     <div class="nav-caption" th:if="${isAdmin}">CARTA Y SALA</div>
     <a class="nav-link" th:if="${isAdmin}" th:classappend="${active == 'productos'} ? ' is-active'" th:href="@{/admin/productos}">
-      <span>03</span> Productos
+      <span>04</span> Productos
     </a>
     <a class="nav-link" th:if="${isAdmin}" th:classappend="${active == 'categorias'} ? ' is-active'" th:href="@{/admin/categorias}">
-      <span>04</span> Categorías
+      <span>05</span> Categorías
     </a>
     <a class="nav-link" th:if="${isAdmin}" th:classappend="${active == 'variantes'} ? ' is-active'" th:href="@{/admin/variantes}">
-      <span>05</span> Variantes
+      <span>06</span> Variantes
     </a>
     <a class="nav-link" th:if="${isAdmin}" th:classappend="${active == 'adicionales'} ? ' is-active'" th:href="@{/admin/adicionales}">
-      <span>06</span> Adicionales
+      <span>07</span> Adicionales
     </a>
     <a class="nav-link" th:if="${isAdmin}" th:classappend="${active == 'mesas'} ? ' is-active'" th:href="@{/admin/mesas}">
-      <span>07</span> Mesas (QR)
+      <span>08</span> Mesas (QR)
     </a>
 
     <div class="nav-caption" th:if="${isAdmin}">CONFIGURACIÓN</div>
     <a class="nav-link" th:if="${isAdmin}" th:classappend="${active == 'usuarios'} ? ' is-active'" th:href="@{/admin/usuarios}">
-      <span>08</span> Usuarios y roles
+      <span>09</span> Usuarios y roles
     </a>
 
     <div class="sidebar-bottom">

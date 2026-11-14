@@ -1,65 +1,77 @@
 package com.restaurante.menu.controller;
 
 import java.util.List;
-import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.restaurante.menu.model.dto.CategoriaMenu;
-import com.restaurante.menu.model.dao.AdicionalDAO;
-import com.restaurante.menu.model.dao.CategoriaDAO;
-import com.restaurante.menu.model.dao.MesaDAO;
-import com.restaurante.menu.model.dao.PedidoDAO;
-import com.restaurante.menu.model.dao.ProductoDAO;
-import com.restaurante.menu.model.dao.UsuarioDAO;
-import com.restaurante.menu.model.dao.VarianteProductoDAO;
-import com.restaurante.menu.vo.Adicional;
-import com.restaurante.menu.vo.Categoria;
-import com.restaurante.menu.vo.Mesa;
-import com.restaurante.menu.vo.Producto;
-import com.restaurante.menu.vo.Usuario;
-import com.restaurante.menu.vo.VarianteProducto;
+import com.restaurante.menu.dto.CategoriaMenu;
+import com.restaurante.menu.dto.ReporteVentas;
+import com.restaurante.menu.entity.Adicional;
+import com.restaurante.menu.entity.Categoria;
+import com.restaurante.menu.entity.Mesa;
+import com.restaurante.menu.entity.Producto;
+import com.restaurante.menu.entity.VarianteProducto;
+import com.restaurante.menu.service.AdicionalService;
+import com.restaurante.menu.service.CategoriaService;
+import com.restaurante.menu.service.ImagenProductoService;
+import com.restaurante.menu.service.MenuService;
+import com.restaurante.menu.service.MesaService;
+import com.restaurante.menu.service.PedidoService;
+import com.restaurante.menu.service.ProductoService;
+import com.restaurante.menu.service.ReporteService;
+import com.restaurante.menu.service.UsuarioService;
+import com.restaurante.menu.service.VarianteProductoService;
 
+/**
+ * Controlador de las vistas Thymeleaf del menú público y del panel administrativo.
+ * Toda la lógica de negocio se delega en la capa de servicios.
+ */
 @Controller
 public class PanelController {
 
-	private static final List<String> ROLES = List.of("ADMIN", "COCINA", "MESERO");
 	private static final List<String> ESTADOS_PEDIDO = List.of(
 			"RECIBIDO", "EN_PREPARACION", "LISTO", "ENTREGADO", "CANCELADO");
 
-	private final CategoriaDAO categoriaDAO;
-	private final ProductoDAO productoDAO;
-	private final VarianteProductoDAO varianteDAO;
-	private final AdicionalDAO adicionalDAO;
-	private final MesaDAO mesaDAO;
-	private final PedidoDAO pedidoDAO;
-	private final UsuarioDAO usuarioDAO;
-	private final PasswordEncoder passwordEncoder;
+	private final CategoriaService categoriaService;
+	private final ProductoService productoService;
+	private final ImagenProductoService imagenProductoService;
+	private final VarianteProductoService varianteService;
+	private final AdicionalService adicionalService;
+	private final MesaService mesaService;
+	private final PedidoService pedidoService;
+	private final ReporteService reporteService;
+	private final UsuarioService usuarioService;
+	private final MenuService menuService;
 	private final String whatsappNumero;
 	private final String restauranteNombre;
 
-	public PanelController(CategoriaDAO categoriaDAO, ProductoDAO productoDAO,
-			VarianteProductoDAO varianteDAO, AdicionalDAO adicionalDAO, MesaDAO mesaDAO,
-			PedidoDAO pedidoDAO, UsuarioDAO usuarioDAO, PasswordEncoder passwordEncoder,
+	public PanelController(CategoriaService categoriaService, ProductoService productoService,
+			ImagenProductoService imagenProductoService,
+			VarianteProductoService varianteService, AdicionalService adicionalService,
+			MesaService mesaService, PedidoService pedidoService, UsuarioService usuarioService,
+			ReporteService reporteService,
+			MenuService menuService,
 			@Value("${restaurante.whatsapp:573000000000}") String whatsappNumero,
 			@Value("${restaurante.nombre:Asados al Carbón}") String restauranteNombre) {
-		this.categoriaDAO = categoriaDAO;
-		this.productoDAO = productoDAO;
-		this.varianteDAO = varianteDAO;
-		this.adicionalDAO = adicionalDAO;
-		this.mesaDAO = mesaDAO;
-		this.pedidoDAO = pedidoDAO;
-		this.usuarioDAO = usuarioDAO;
-		this.passwordEncoder = passwordEncoder;
+		this.categoriaService = categoriaService;
+		this.productoService = productoService;
+		this.imagenProductoService = imagenProductoService;
+		this.varianteService = varianteService;
+		this.adicionalService = adicionalService;
+		this.mesaService = mesaService;
+		this.pedidoService = pedidoService;
+		this.reporteService = reporteService;
+		this.usuarioService = usuarioService;
+		this.menuService = menuService;
 		this.whatsappNumero = whatsappNumero;
 		this.restauranteNombre = restauranteNombre;
 	}
@@ -73,7 +85,7 @@ public class PanelController {
 	@GetMapping("/registro")
 	public String registro(Model model) {
 		model.addAttribute("restauranteNombre", restauranteNombre);
-		model.addAttribute("roles", ROLES);
+		model.addAttribute("roles", UsuarioService.ROLES);
 		return "registro";
 	}
 
@@ -85,26 +97,9 @@ public class PanelController {
 			@RequestParam(required = false, defaultValue = "ADMIN") String rol,
 			RedirectAttributes redirect) {
 		try {
-			String uNombre = Validaciones.texto(nombre, "nombre", 100);
-			String uUsername = Validaciones.texto(username, "username", 60);
-
-			if (password == null || password.length() < 6) {
-				throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres.");
-			}
-			if (confirmPassword != null && !password.equals(confirmPassword)) {
-				throw new IllegalArgumentException("Las contraseñas no coinciden.");
-			}
-			if (usuarioDAO.buscarPorUsername(uUsername).isPresent()) {
-				throw new IllegalArgumentException("El nombre de usuario '" + uUsername + "' ya existe.");
-			}
-
-			String rolAsignado = (rol != null && ROLES.contains(rol.trim().toUpperCase(Locale.ROOT)))
-					? rol.trim().toUpperCase(Locale.ROOT) : "ADMIN";
-
-			usuarioDAO.insertar(new Usuario(null, uUsername, passwordEncoder.encode(password),
-					uNombre, rolAsignado, true));
-
-			redirect.addFlashAttribute("mensaje", "¡Cuenta creada con éxito! Ya puedes iniciar sesión con tu usuario y contraseña.");
+			usuarioService.registrar(nombre, username, password, confirmPassword, rol);
+			redirect.addFlashAttribute("mensaje",
+					"¡Cuenta creada con éxito! Ya puedes iniciar sesión con tu usuario y contraseña.");
 			return "redirect:/login";
 		} catch (RuntimeException ex) {
 			redirect.addFlashAttribute("error", ex.getMessage());
@@ -121,22 +116,12 @@ public class PanelController {
 	public String menu(@RequestParam(required = false) String mesa,
 			@RequestParam(required = false) String codigo,
 			Model model) {
-		var variantesPorProducto = varianteDAO.listarDisponibles().stream()
-				.collect(java.util.stream.Collectors.groupingBy(VarianteProducto::getProductoId));
-		var productosPorCategoria = productoDAO.listar(null, true).stream()
-				.collect(java.util.stream.Collectors.groupingBy(Producto::getCategoriaId));
-		List<CategoriaMenu> menu = categoriaDAO.listar(true).stream()
-				.map(categoria -> new CategoriaMenu(categoria,
-						productosPorCategoria.getOrDefault(categoria.getId(), List.of()).stream()
-						.map(producto -> new CategoriaMenu.ProductoMenu(producto,
-								variantesPorProducto.getOrDefault(producto.getId(), List.of())))
-						.toList()))
-				.filter(categoria -> !categoria.productos().isEmpty())
-				.toList();
+		List<CategoriaMenu> menu = menuService.obtenerMenu();
 
 		model.addAttribute("menu", menu);
-		model.addAttribute("adicionales", adicionalDAO.listar(null, true));
-		model.addAttribute("mesas", mesaDAO.listar().stream().filter(m -> Boolean.TRUE.equals(m.getActiva())).toList());
+		model.addAttribute("adicionales", adicionalService.listar(null, true));
+		model.addAttribute("mesas", mesaService.listar().stream()
+				.filter(m -> Boolean.TRUE.equals(m.getActiva())).toList());
 
 		String mesaSel = (codigo != null && !codigo.isBlank()) ? codigo.trim() : (mesa != null ? mesa.trim() : "");
 		model.addAttribute("mesaPreseleccionada", mesaSel);
@@ -151,10 +136,10 @@ public class PanelController {
 				|| authentication instanceof AnonymousAuthenticationToken) {
 			return "redirect:/menu";
 		}
-		model.addAttribute("productosCount", productoDAO.listar(null, false).size());
-		model.addAttribute("categoriasCount", categoriaDAO.listar(false).size());
-		model.addAttribute("mesasCount", mesaDAO.listar().size());
-		model.addAttribute("pedidos", pedidoDAO.listarActivos());
+		model.addAttribute("productosCount", productoService.listar(null, false).size());
+		model.addAttribute("categoriasCount", categoriaService.listar(false).size());
+		model.addAttribute("mesasCount", mesaService.listar().size());
+		model.addAttribute("pedidos", pedidoService.listarActivos());
 		model.addAttribute("restauranteNombre", restauranteNombre);
 		return "dashboard";
 	}
@@ -162,7 +147,7 @@ public class PanelController {
 	@GetMapping("/admin/pedidos")
 	public String pedidos(@RequestParam(required = false) String estado, Model model) {
 		model.addAttribute("pedidos", estado == null || estado.isBlank()
-				? pedidoDAO.listarActivos() : pedidoDAO.listarPorEstado(estado));
+				? pedidoService.listarActivos() : pedidoService.listarPorEstado(estado));
 		model.addAttribute("estado", estado == null ? "" : estado);
 		model.addAttribute("estados", ESTADOS_PEDIDO);
 		model.addAttribute("restauranteNombre", restauranteNombre);
@@ -173,7 +158,7 @@ public class PanelController {
 	public String cambiarEstadoPedido(@RequestParam Integer id, @RequestParam String estado,
 			RedirectAttributes redirect) {
 		try {
-			pedidoDAO.cambiarEstado(id, estado);
+			pedidoService.cambiarEstado(id, estado);
 			redirect.addFlashAttribute("mensaje", "El estado del pedido fue actualizado.");
 		} catch (RuntimeException exception) {
 			redirect.addFlashAttribute("error", exception.getMessage());
@@ -181,28 +166,52 @@ public class PanelController {
 		return "redirect:/admin/pedidos";
 	}
 
+	@GetMapping("/admin/reportes")
+	public String reportes(@RequestParam(required = false) String periodo,
+			@RequestParam(required = false) String fecha,
+			Model model) {
+		ReporteVentas reporte = reporteService.generar(periodo, fecha);
+		model.addAttribute("reporte", reporte);
+		model.addAttribute("restauranteNombre", restauranteNombre);
+		return "reportes";
+	}
+
 	@GetMapping("/admin/productos")
 	public String productos(Model model) {
-		model.addAttribute("productos", productoDAO.listar(null, false));
-		model.addAttribute("categorias", categoriaDAO.listar(false));
+		model.addAttribute("productos", productoService.listar(null, false));
+		model.addAttribute("categorias", categoriaService.listar(false));
 		model.addAttribute("restauranteNombre", restauranteNombre);
 		return "productos";
 	}
 
 	@PostMapping("/admin/productos/guardar")
-	public String guardarProducto(Producto producto, RedirectAttributes redirect) {
+	public String guardarProducto(Producto producto,
+			@RequestParam(value = "archivoImagen", required = false) MultipartFile archivoImagen,
+			RedirectAttributes redirect) {
+		String nuevaImagen = null;
 		try {
-			producto.setNombre(Validaciones.texto(producto.getNombre(), "nombre", 100));
-			producto.setDescripcion(Validaciones.opcional(producto.getDescripcion(), "descripcion", 300));
-			producto.setImagen(Validaciones.opcional(producto.getImagen(), "imagen", 255));
-			Validaciones.precio(producto.getPrecio(), "precio");
-			if (producto.getId() == null) {
-				productoDAO.insertar(producto);
-			} else {
-				productoDAO.actualizar(producto);
+			String imagenAnterior = producto.getId() == null
+					? null : productoService.obtener(producto.getId()).getImagen();
+
+			nuevaImagen = imagenProductoService.guardar(archivoImagen);
+			if (nuevaImagen != null) {
+				producto.setImagen(nuevaImagen);
 			}
+
+			Producto guardado = productoService.guardar(producto);
+
+			boolean imagenCambiada = nuevaImagen != null
+					|| producto.getImagen() == null || producto.getImagen().isBlank();
+			if (imagenCambiada && imagenAnterior != null
+					&& !imagenAnterior.equals(guardado.getImagen())) {
+				imagenProductoService.eliminar(imagenAnterior);
+			}
+
 			redirect.addFlashAttribute("mensaje", "Producto guardado.");
 		} catch (RuntimeException exception) {
+			if (nuevaImagen != null) {
+				imagenProductoService.eliminar(nuevaImagen);
+			}
 			redirect.addFlashAttribute("error", exception.getMessage());
 		}
 		return "redirect:/admin/productos";
@@ -211,7 +220,9 @@ public class PanelController {
 	@PostMapping("/admin/productos/eliminar")
 	public String eliminarProducto(@RequestParam Integer id, RedirectAttributes redirect) {
 		try {
-			productoDAO.eliminar(id);
+			Producto producto = productoService.obtener(id);
+			productoService.eliminar(id);
+			imagenProductoService.eliminar(producto.getImagen());
 			redirect.addFlashAttribute("mensaje", "Producto eliminado.");
 		} catch (RuntimeException exception) {
 			redirect.addFlashAttribute("error", "No se pudo eliminar el producto. Puede estar asociado a pedidos.");
@@ -221,7 +232,7 @@ public class PanelController {
 
 	@GetMapping("/admin/categorias")
 	public String categorias(Model model) {
-		model.addAttribute("categorias", categoriaDAO.listar(false));
+		model.addAttribute("categorias", categoriaService.listar(false));
 		model.addAttribute("restauranteNombre", restauranteNombre);
 		return "categorias";
 	}
@@ -229,12 +240,7 @@ public class PanelController {
 	@PostMapping("/admin/categorias/guardar")
 	public String guardarCategoria(Categoria categoria, RedirectAttributes redirect) {
 		try {
-			categoria.setNombre(Validaciones.texto(categoria.getNombre(), "nombre", 60));
-			if (categoria.getId() == null) {
-				categoriaDAO.insertar(categoria);
-			} else {
-				categoriaDAO.actualizar(categoria);
-			}
+			categoriaService.guardar(categoria);
 			redirect.addFlashAttribute("mensaje", "Categoría guardada.");
 		} catch (RuntimeException exception) {
 			redirect.addFlashAttribute("error", exception.getMessage());
@@ -245,7 +251,7 @@ public class PanelController {
 	@PostMapping("/admin/categorias/eliminar")
 	public String eliminarCategoria(@RequestParam Integer id, RedirectAttributes redirect) {
 		try {
-			categoriaDAO.eliminar(id);
+			categoriaService.eliminar(id);
 			redirect.addFlashAttribute("mensaje", "Categoría eliminada.");
 		} catch (RuntimeException exception) {
 			redirect.addFlashAttribute("error", "No se pudo eliminar. Comprueba si tiene productos asociados.");
@@ -255,7 +261,7 @@ public class PanelController {
 
 	@GetMapping("/admin/mesas")
 	public String mesas(Model model) {
-		model.addAttribute("mesas", mesaDAO.listar());
+		model.addAttribute("mesas", mesaService.listar());
 		model.addAttribute("restauranteNombre", restauranteNombre);
 		return "mesas";
 	}
@@ -263,14 +269,7 @@ public class PanelController {
 	@PostMapping("/admin/mesas/guardar")
 	public String guardarMesa(Mesa mesa, RedirectAttributes redirect) {
 		try {
-			if (mesa.getNumero() == null || mesa.getNumero() < 1) {
-				throw new IllegalArgumentException("El número debe ser mayor que cero.");
-			}
-			if (mesa.getId() == null) {
-				mesaDAO.insertar(mesa);
-			} else {
-				mesaDAO.actualizar(mesa);
-			}
+			mesaService.guardar(mesa);
 			redirect.addFlashAttribute("mensaje", "Mesa guardada.");
 		} catch (RuntimeException exception) {
 			redirect.addFlashAttribute("error", exception.getMessage());
@@ -281,7 +280,7 @@ public class PanelController {
 	@PostMapping("/admin/mesas/eliminar")
 	public String eliminarMesa(@RequestParam Integer id, RedirectAttributes redirect) {
 		try {
-			mesaDAO.eliminar(id);
+			mesaService.eliminar(id);
 			redirect.addFlashAttribute("mensaje", "Mesa eliminada.");
 		} catch (RuntimeException exception) {
 			redirect.addFlashAttribute("error", "No se pudo eliminar. Comprueba si tiene pedidos asociados.");
@@ -291,8 +290,8 @@ public class PanelController {
 
 	@GetMapping("/admin/adicionales")
 	public String adicionales(Model model) {
-		model.addAttribute("adicionales", adicionalDAO.listar(null, false));
-		model.addAttribute("categorias", categoriaDAO.listar(false));
+		model.addAttribute("adicionales", adicionalService.listar(null, false));
+		model.addAttribute("categorias", categoriaService.listar(false));
 		model.addAttribute("restauranteNombre", restauranteNombre);
 		return "adicionales";
 	}
@@ -300,16 +299,7 @@ public class PanelController {
 	@PostMapping("/admin/adicionales/guardar")
 	public String guardarAdicional(Adicional adicional, RedirectAttributes redirect) {
 		try {
-			adicional.setNombre(Validaciones.texto(adicional.getNombre(), "nombre", 80));
-			if (adicional.getPrecio() == null) {
-				throw new IllegalArgumentException("El precio es obligatorio.");
-			}
-			Validaciones.precio(adicional.getPrecio(), "precio");
-			if (adicional.getId() == null) {
-				adicionalDAO.insertar(adicional);
-			} else {
-				adicionalDAO.actualizar(adicional);
-			}
+			adicionalService.guardar(adicional);
 			redirect.addFlashAttribute("mensaje", "Adicional guardado.");
 		} catch (RuntimeException exception) {
 			redirect.addFlashAttribute("error", exception.getMessage());
@@ -320,7 +310,7 @@ public class PanelController {
 	@PostMapping("/admin/adicionales/eliminar")
 	public String eliminarAdicional(@RequestParam Integer id, RedirectAttributes redirect) {
 		try {
-			adicionalDAO.eliminar(id);
+			adicionalService.eliminar(id);
 			redirect.addFlashAttribute("mensaje", "Adicional eliminado.");
 		} catch (RuntimeException exception) {
 			redirect.addFlashAttribute("error", "No se pudo eliminar. Comprueba si está incluido en pedidos.");
@@ -330,9 +320,9 @@ public class PanelController {
 
 	@GetMapping("/admin/variantes")
 	public String variantes(Model model) {
-		List<Producto> productos = productoDAO.listar(null, false);
+		List<Producto> productos = productoService.listar(null, false);
 		List<VarianteFila> variantes = productos.stream()
-				.flatMap(producto -> varianteDAO.listarPorProducto(producto.getId(), false).stream()
+				.flatMap(producto -> varianteService.listarPorProducto(producto.getId(), false).stream()
 						.map(variante -> new VarianteFila(variante, producto.getNombre())))
 				.toList();
 		model.addAttribute("variantes", variantes);
@@ -344,13 +334,7 @@ public class PanelController {
 	@PostMapping("/admin/variantes/guardar")
 	public String guardarVariante(VarianteProducto variante, RedirectAttributes redirect) {
 		try {
-			variante.setNombre(Validaciones.texto(variante.getNombre(), "nombre", 60));
-			Validaciones.precio(variante.getPrecio(), "precio");
-			if (variante.getId() == null) {
-				varianteDAO.insertar(variante);
-			} else {
-				varianteDAO.actualizar(variante);
-			}
+			varianteService.guardar(variante);
 			redirect.addFlashAttribute("mensaje", "Variante guardada.");
 		} catch (RuntimeException exception) {
 			redirect.addFlashAttribute("error", exception.getMessage());
@@ -361,7 +345,7 @@ public class PanelController {
 	@PostMapping("/admin/variantes/eliminar")
 	public String eliminarVariante(@RequestParam Integer id, RedirectAttributes redirect) {
 		try {
-			varianteDAO.eliminar(id);
+			varianteService.eliminar(id);
 			redirect.addFlashAttribute("mensaje", "Variante eliminada.");
 		} catch (RuntimeException exception) {
 			redirect.addFlashAttribute("error", "No se pudo eliminar esta variante.");
@@ -371,8 +355,8 @@ public class PanelController {
 
 	@GetMapping("/admin/usuarios")
 	public String usuarios(Model model) {
-		model.addAttribute("usuarios", usuarioDAO.listar());
-		model.addAttribute("roles", ROLES);
+		model.addAttribute("usuarios", usuarioService.listar());
+		model.addAttribute("roles", UsuarioService.ROLES);
 		model.addAttribute("restauranteNombre", restauranteNombre);
 		return "usuarios";
 	}
@@ -382,34 +366,9 @@ public class PanelController {
 			@RequestParam String username, @RequestParam String nombre, @RequestParam String rol,
 			@RequestParam(required = false) String password,
 			@RequestParam(defaultValue = "false") boolean activo,
-			Authentication authentication, RedirectAttributes redirect) {
+			RedirectAttributes redirect) {
 		try {
-			String rolNormalizado = rol.trim().toUpperCase(Locale.ROOT);
-			if (!ROLES.contains(rolNormalizado)) {
-				throw new IllegalArgumentException("El rol seleccionado no es válido.");
-			}
-			if (id == null) {
-				if (password == null || password.length() < 10) {
-					throw new IllegalArgumentException("La contraseña inicial debe tener al menos 10 caracteres.");
-				}
-				usuarioDAO.insertar(new Usuario(null, username.trim(), passwordEncoder.encode(password),
-						nombre.trim(), rolNormalizado, activo));
-			} else {
-				Usuario existente = usuarioDAO.buscarPorId(id)
-						.orElseThrow(() -> new IllegalArgumentException("El usuario ya no existe."));
-				if (password != null && !password.isBlank() && password.length() < 10) {
-					throw new IllegalArgumentException("La nueva contraseña debe tener al menos 10 caracteres.");
-				}
-				protegerUltimoAdministrador(existente, rolNormalizado, activo);
-				existente.setUsername(username.trim());
-				existente.setNombre(nombre.trim());
-				existente.setRol(rolNormalizado);
-				existente.setActivo(activo);
-				usuarioDAO.actualizar(existente);
-				if (password != null && !password.isBlank()) {
-					usuarioDAO.cambiarPassword(id, passwordEncoder.encode(password));
-				}
-			}
+			usuarioService.guardar(id, username, nombre, rol, password, activo);
 			redirect.addFlashAttribute("mensaje", "Usuario guardado.");
 		} catch (RuntimeException exception) {
 			redirect.addFlashAttribute("error", exception.getMessage());
@@ -421,33 +380,12 @@ public class PanelController {
 	public String eliminarUsuario(@RequestParam Integer id, Authentication authentication,
 			RedirectAttributes redirect) {
 		try {
-			Usuario usuario = usuarioDAO.buscarPorId(id)
-					.orElseThrow(() -> new IllegalArgumentException("El usuario ya no existe."));
-			if (usuario.getUsername().equals(authentication.getName())) {
-				throw new IllegalArgumentException("No puedes eliminar tu propia cuenta.");
-			}
-			protegerUltimoAdministrador(usuario, "", false);
-			usuarioDAO.eliminar(id);
+			usuarioService.eliminar(id, authentication.getName());
 			redirect.addFlashAttribute("mensaje", "Usuario eliminado.");
 		} catch (RuntimeException exception) {
 			redirect.addFlashAttribute("error", exception.getMessage());
 		}
 		return "redirect:/admin/usuarios";
-	}
-
-	private void protegerUltimoAdministrador(Usuario usuario, String nuevoRol, boolean nuevoActivo) {
-		if (!"ADMIN".equalsIgnoreCase(usuario.getRol()) || !Boolean.TRUE.equals(usuario.getActivo())
-				|| ("ADMIN".equals(nuevoRol) && nuevoActivo)) {
-			return;
-		}
-		long administradores = usuarioDAO.listar().stream()
-				.filter(otro -> !otro.getId().equals(usuario.getId()))
-				.filter(otro -> "ADMIN".equalsIgnoreCase(otro.getRol()))
-				.filter(otro -> Boolean.TRUE.equals(otro.getActivo()))
-				.count();
-		if (administradores == 0) {
-			throw new IllegalArgumentException("Debe permanecer al menos un administrador activo.");
-		}
 	}
 
 	public record VarianteFila(VarianteProducto variante, String productoNombre) {

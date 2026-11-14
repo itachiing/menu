@@ -1,6 +1,5 @@
 package com.restaurante.menu.controller;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -15,9 +14,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.restaurante.menu.model.dao.AdicionalDAO;
-import com.restaurante.menu.model.dao.CategoriaDAO;
-import com.restaurante.menu.vo.Adicional;
+import com.restaurante.menu.entity.Adicional;
+import com.restaurante.menu.service.AdicionalService;
 
 /**
  * Adicionales (queso extra, tocineta, papas...). Si categoriaId es null aplican a todas las categorías.
@@ -26,12 +24,10 @@ import com.restaurante.menu.vo.Adicional;
 @RequestMapping("/api/adicionales")
 public class AdicionalController {
 
-	private final AdicionalDAO adicionalDAO;
-	private final CategoriaDAO categoriaDAO;
+	private final AdicionalService adicionalService;
 
-	public AdicionalController(AdicionalDAO adicionalDAO, CategoriaDAO categoriaDAO) {
-		this.adicionalDAO = adicionalDAO;
-		this.categoriaDAO = categoriaDAO;
+	public AdicionalController(AdicionalService adicionalService) {
+		this.adicionalService = adicionalService;
 	}
 
 	/**
@@ -40,46 +36,28 @@ public class AdicionalController {
 	@GetMapping
 	public List<Adicional> listar(@RequestParam(required = false) Integer categoriaId,
 			@RequestParam(defaultValue = "false") boolean soloDisponibles) {
-		return adicionalDAO.listar(categoriaId, soloDisponibles);
+		return adicionalService.listar(categoriaId, soloDisponibles);
 	}
 
 	@GetMapping("/{id}")
 	public Adicional obtener(@PathVariable Integer id) {
-		return Validaciones.encontrado(adicionalDAO.buscarPorId(id), "Adicional");
+		return adicionalService.obtener(id);
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public Adicional crear(@RequestBody Adicional adicional) {
-		validar(adicional);
-		return adicionalDAO.insertar(adicional);
+		return adicionalService.crear(adicional);
 	}
 
 	@PutMapping("/{id}")
 	public Adicional actualizar(@PathVariable Integer id, @RequestBody Adicional adicional) {
-		obtener(id);
-		adicional.setId(id);
-		validar(adicional);
-		adicionalDAO.actualizar(adicional);
-		return obtener(id);
+		return adicionalService.actualizar(id, adicional);
 	}
 
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void eliminar(@PathVariable Integer id) {
-		obtener(id);
-		adicionalDAO.eliminar(id);
-	}
-
-	private void validar(Adicional adicional) {
-		adicional.setNombre(Validaciones.texto(adicional.getNombre(), "nombre", 80));
-		if (adicional.getPrecio() == null) {
-			adicional.setPrecio(BigDecimal.ZERO);
-		}
-		Validaciones.precio(adicional.getPrecio(), "precio");
-		if (adicional.getCategoriaId() != null
-				&& categoriaDAO.buscarPorId(adicional.getCategoriaId()).isEmpty()) {
-			throw new IllegalArgumentException("La categoría indicada no existe");
-		}
+		adicionalService.eliminar(id);
 	}
 }

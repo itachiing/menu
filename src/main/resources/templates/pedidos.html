@@ -6,7 +6,7 @@
   <title>Pedidos en Vivo | Asados al Carbón</title>
   <link rel="stylesheet" th:href="@{/css/estilos.css}">
 </head>
-<body>
+<body class="admin-panel">
   <div class="app-shell">
     <aside th:replace="~{fragments :: sidebar('pedidos')}"></aside>
     <main class="main-content">
@@ -53,31 +53,31 @@
                   <li th:each="linea : ${item.lineas}" style="margin-bottom: 6px;">
                     <strong th:text="|${linea.detalle.cantidad}x ${linea.productoNombre}${linea.varianteNombre != null ? ' (' + linea.varianteNombre + ')' : ''}|">1x Plato</strong>
                     <div th:if="${!#lists.isEmpty(linea.adicionales)}" style="padding-left: 10px;">
-                      <small style="color: #ff9800;" th:each="adic : ${linea.adicionales}" th:text="|＋ ${adic.nombre}|">+ Extra</small>
+                      <small style="color: var(--m-gold);" th:each="adic : ${linea.adicionales}" th:text="|+ ${adic.nombre}|">+ Extra</small>
                     </div>
                     <div th:if="${linea.detalle.observacion != null and !#strings.isEmpty(linea.detalle.observacion)}" style="padding-left: 10px;">
-                      <small class="table-sub" th:text="|👉 ${linea.detalle.observacion}|">Nota</small>
+                      <small class="table-sub" th:text="|Nota: ${linea.detalle.observacion}|">Nota</small>
                     </div>
                   </li>
                 </ul>
-                <div th:if="${item.pedido.observaciones != null and !#strings.isEmpty(item.pedido.observaciones)}" style="margin-top: 6px; padding: 4px 8px; background: rgba(255, 152, 0, 0.1); border-radius: 4px;">
-                  <small style="color: #ff9800; font-weight: 700;" th:text="|📝 ${item.pedido.observaciones}|">Nota general</small>
+                <div th:if="${item.pedido.observaciones != null and !#strings.isEmpty(item.pedido.observaciones)}" style="margin-top: 6px; padding: 4px 8px; background: rgba(201, 168, 106, 0.1); border-radius: 3px;">
+                  <small style="color: var(--m-gold); font-weight: 600;" th:text="|Nota general: ${item.pedido.observaciones}|">Nota general</small>
                 </div>
               </td>
               <td>
                 <div style="display: flex; flex-direction: column; gap: 2px;">
                   <span class="strong">
-                    <span th:if="${item.pedido.tipoPedido == 'MESA'}" th:text="|📍 Mesa ${item.mesaNumero != null ? item.mesaNumero : '?'}|">Mesa</span>
-                    <span th:if="${item.pedido.tipoPedido == 'DOMICILIO'}">🛵 Domicilio</span>
-                    <span th:if="${item.pedido.tipoPedido == 'LLEVAR'}">🛍️ Para Llevar</span>
+                    <span th:if="${item.pedido.tipoPedido == 'MESA'}" th:text="|Mesa ${item.mesaNumero != null ? item.mesaNumero : '?'}|">Mesa</span>
+                    <span th:if="${item.pedido.tipoPedido == 'DOMICILIO'}">Domicilio</span>
+                    <span th:if="${item.pedido.tipoPedido == 'LLEVAR'}">Para llevar</span>
                   </span>
-                  <span th:if="${item.pedido.nombreCliente != null}" th:text="${item.pedido.nombreCliente}" style="font-size: 12px; color: #d4d4d8;">Nombre</span>
+                  <span th:if="${item.pedido.nombreCliente != null}" th:text="${item.pedido.nombreCliente}" style="font-size: 12px; color: var(--m-muted);">Nombre</span>
                   <small th:if="${item.pedido.telefono != null}" th:text="${item.pedido.telefono}" class="table-sub">Teléfono</small>
-                  <small th:if="${item.pedido.direccion != null}" th:text="${item.pedido.direccion}" style="color: #ffb300; font-size: 11px;">Dirección</small>
+                  <small th:if="${item.pedido.direccion != null}" th:text="${item.pedido.direccion}" style="color: var(--m-gold-light); font-size: 11px;">Dirección</small>
                 </div>
               </td>
               <td th:text="${#temporals.format(item.pedido.fechaHora, 'HH:mm')}">12:30</td>
-              <td class="strong" style="color: #ffb300;" th:text="|$${#numbers.formatDecimal(item.pedido.total, 1, 'POINT', 0, 'POINT')}|">$0</td>
+              <td class="strong amount" th:text="|$${#numbers.formatDecimal(item.pedido.total, 1, 'POINT', 0, 'POINT')}|">$0</td>
               <td>
                 <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start;">
                   <span class="status-pill"
@@ -106,7 +106,11 @@
       </div>
 
       <div class="empty-state" th:if="${#lists.isEmpty(pedidos)}">
-        <span class="empty-mark">🔥</span>
+        <span class="empty-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z"/>
+          </svg>
+        </span>
         <h2>Sin pedidos en esta vista</h2>
         <p>Los pedidos realizados por los clientes en la carta o vía WhatsApp aparecerán aquí en tiempo real.</p>
       </div>

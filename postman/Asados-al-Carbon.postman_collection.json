@@ -1,0 +1,621 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-0000-4000-8000-asadosalcarbon",
+    "name": "Asados al Carbón - API REST",
+    "description": "Colección de pruebas de los endpoints REST del prototipo. Usa autenticación básica con un usuario ADMIN (por defecto jonatan / jonatan123). Importa también el environment 'Asados al Carbón - Local'.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "basic",
+    "basic": [
+      { "key": "username", "value": "{{usuario}}", "type": "string" },
+      { "key": "password", "value": "{{password}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8085" },
+    { "key": "categoriaId", "value": "1" },
+    { "key": "productoId", "value": "1" },
+    { "key": "productoConVariantes", "value": "3" },
+    { "key": "varianteId", "value": "1" },
+    { "key": "adicionalId", "value": "1" },
+    { "key": "mesaId", "value": "1" },
+    { "key": "mesaCodigo", "value": "" },
+    { "key": "productoPedidoId", "value": "1" },
+    { "key": "adicionalPedidoId", "value": "" },
+    { "key": "pedidoId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Menú público",
+      "item": [
+        {
+          "name": "Obtener menú completo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/menu",
+            "description": "Categorías activas con sus productos y variantes disponibles. No requiere autenticación."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve un arreglo de categorías', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar mesa por código QR",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/mesas/codigo/{{mesaCodigo}}",
+            "description": "Resuelve una mesa a partir del código impreso en el QR. No requiere autenticación."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categorías (CRUD)",
+      "item": [
+        {
+          "name": "Listar categorías",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/categorias"
+          }
+        },
+        {
+          "name": "Obtener categoría por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/categorias/{{categoriaId}}"
+          }
+        },
+        {
+          "name": "Crear categoría",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Postres\",\n  \"orden\": 7,\n  \"activa\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/categorias"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "const creada = pm.response.json();",
+                  "pm.collectionVariables.set('categoriaId', creada.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar categoría",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Postres y bebidas\",\n  \"orden\": 7,\n  \"activa\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/categorias/{{categoriaId}}"
+          }
+        },
+        {
+          "name": "Eliminar categoría",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/categorias/{{categoriaId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Productos (CRUD)",
+      "item": [
+        {
+          "name": "Listar productos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/productos"
+          }
+        },
+        {
+          "name": "Listar productos disponibles de una categoría",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/productos?categoriaId={{categoriaId}}&soloDisponibles=true"
+          }
+        },
+        {
+          "name": "Obtener producto por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/productos/{{productoId}}"
+          }
+        },
+        {
+          "name": "Crear producto",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoriaId\": 1,\n  \"nombre\": \"Burguer Especial\",\n  \"descripcion\": \"Carne artesanal, queso y tocineta\",\n  \"precio\": 18000,\n  \"imagen\": \"\",\n  \"disponible\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/productos"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "const creado = pm.response.json();",
+                  "pm.collectionVariables.set('productoId', creado.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar producto",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoriaId\": 1,\n  \"nombre\": \"Burguer Especial Actualizada\",\n  \"descripcion\": \"Carne artesanal, queso, tocineta y huevo\",\n  \"precio\": 19000,\n  \"imagen\": \"\",\n  \"disponible\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/productos/{{productoId}}"
+          }
+        },
+        {
+          "name": "Marcar producto como agotado",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/productos/{{productoId}}/disponibilidad?disponible=false"
+          }
+        },
+        {
+          "name": "Eliminar producto",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/productos/{{productoId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Adicionales (CRUD)",
+      "item": [
+        {
+          "name": "Listar adicionales",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/adicionales"
+          }
+        },
+        {
+          "name": "Obtener adicional por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/adicionales/{{adicionalId}}"
+          }
+        },
+        {
+          "name": "Crear adicional",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoriaId\": null,\n  \"nombre\": \"Salsa extra\",\n  \"precio\": 2000,\n  \"disponible\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/adicionales"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "const creado = pm.response.json();",
+                  "pm.collectionVariables.set('adicionalId', creado.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar adicional",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoriaId\": null,\n  \"nombre\": \"Salsa extra de la casa\",\n  \"precio\": 2500,\n  \"disponible\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/adicionales/{{adicionalId}}"
+          }
+        },
+        {
+          "name": "Eliminar adicional",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/adicionales/{{adicionalId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Mesas (CRUD)",
+      "item": [
+        {
+          "name": "Listar mesas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/mesas"
+          }
+        },
+        {
+          "name": "Obtener mesa por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/mesas/{{mesaId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const mesa = pm.response.json();",
+                  "pm.collectionVariables.set('mesaCodigo', mesa.codigo);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear mesa",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numero\": 9,\n  \"activa\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/mesas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "const creada = pm.response.json();",
+                  "pm.collectionVariables.set('mesaId', creada.id);",
+                  "pm.collectionVariables.set('mesaCodigo', creada.codigo);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar mesa",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"numero\": 10,\n  \"activa\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/mesas/{{mesaId}}"
+          }
+        },
+        {
+          "name": "Regenerar código QR de la mesa",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/mesas/{{mesaId}}/codigo"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const mesa = pm.response.json();",
+                  "pm.collectionVariables.set('mesaCodigo', mesa.codigo);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar mesa",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/mesas/{{mesaId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Variantes (CRUD)",
+      "item": [
+        {
+          "name": "Listar variantes de un producto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/productos/{{productoConVariantes}}/variantes"
+          }
+        },
+        {
+          "name": "Crear variante",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Para 2 personas\",\n  \"precio\": 25000,\n  \"disponible\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/productos/{{productoConVariantes}}/variantes"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "const creada = pm.response.json();",
+                  "pm.collectionVariables.set('varianteId', creada.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Obtener variante por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/variantes/{{varianteId}}"
+          }
+        },
+        {
+          "name": "Actualizar variante",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Para 2 personas (grande)\",\n  \"precio\": 27000,\n  \"disponible\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/variantes/{{varianteId}}"
+          }
+        },
+        {
+          "name": "Eliminar variante",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/variantes/{{varianteId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Pedidos",
+      "item": [
+        {
+          "name": "Preparar mesa activa para el pedido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/mesas",
+            "description": "Toma la primera mesa activa y guarda su id y su código QR para usarlos en el pedido."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const mesas = pm.response.json().filter(m => m.activa);",
+                  "if (mesas.length === 0) { throw new Error('No hay mesas activas'); }",
+                  "pm.collectionVariables.set('mesaId', mesas[0].id);",
+                  "pm.collectionVariables.set('mesaCodigo', mesas[0].codigo);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear pedido (cliente)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipoPedido\": \"MESA\",\n  \"mesaCodigo\": \"{{mesaCodigo}}\",\n  \"nombreCliente\": \"Cliente de prueba\",\n  \"telefono\": \"3001234567\",\n  \"observaciones\": \"Sin cebolla\",\n  \"items\": [\n    {\n      \"productoId\": {{productoPedidoId}},\n      \"cantidad\": 2,\n      \"observacion\": \"Bien asada\",\n      \"adicionalIds\": [{{adicionalPedidoId}}]\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/pedidos",
+            "description": "Este endpoint es público: el cliente crea el pedido y el servidor calcula precios y total."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Descubre un producto y un adicional válidos para la categoría 1.",
+                  "const base = pm.variables.get('baseUrl');",
+                  "const auth = 'Basic ' + btoa(pm.variables.get('usuario') + ':' + pm.variables.get('password'));",
+                  "pm.sendRequest({ url: base + '/api/productos?categoriaId=1&soloDisponibles=true', header: { Authorization: auth } }, function (err, res) {",
+                  "  if (!err && res.code === 200 && res.json().length > 0) {",
+                  "    pm.collectionVariables.set('productoPedidoId', res.json()[0].id);",
+                  "  }",
+                  "  pm.sendRequest({ url: base + '/api/adicionales?categoriaId=1&soloDisponibles=true', header: { Authorization: auth } }, function (e2, r2) {",
+                  "    if (!e2 && r2.code === 200 && r2.json().length > 0) {",
+                  "      pm.collectionVariables.set('adicionalPedidoId', r2.json()[0].id);",
+                  "    }",
+                  "  });",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "const pedido = pm.response.json();",
+                  "pm.test('El servidor calculó un total mayor que cero', () => pm.expect(pedido.pedido.total).to.be.above(0));",
+                  "pm.collectionVariables.set('pedidoId', pedido.pedido.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar pedidos activos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/pedidos"
+          }
+        },
+        {
+          "name": "Listar pedidos por estado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/pedidos?estado=RECIBIDO"
+          }
+        },
+        {
+          "name": "Obtener pedido por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/pedidos/{{pedidoId}}"
+          }
+        },
+        {
+          "name": "Cambiar estado del pedido",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": "{{baseUrl}}/api/pedidos/{{pedidoId}}/estado?estado=EN_PREPARACION"
+          }
+        }
+      ]
+    }
+  ]
+}

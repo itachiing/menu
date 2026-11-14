@@ -7,20 +7,24 @@
   <link rel="stylesheet" th:href="@{/css/estilos.css}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
 </head>
 <body class="public-menu flame-theme">
 
   <!-- Header superior -->
   <header class="public-header">
     <a class="brand brand-flame" th:href="@{/menu}">
-      <span class="brand-mark">🔥</span>
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z"/>
+        </svg>
+      </span>
       <span>ASADOS<small>AL CARBÓN</small></span>
     </a>
 
     <div class="header-badges">
       <span id="mesaBadge" class="mesa-badge" th:if="${mesaPreseleccionada != null and !#strings.isEmpty(mesaPreseleccionada)}">
-        📍 Mesa <span th:text="${mesaPreseleccionada}">1</span>
+        Mesa <span th:text="${mesaPreseleccionada}">1</span>
       </span>
       <a class="staff-link" th:href="@{/login}">Acceso equipo <span>↗</span></a>
     </div>
@@ -29,14 +33,14 @@
   <!-- Hero banner -->
   <section class="menu-hero">
     <div class="hero-inner">
-      <span class="flame-pill">🔥 SABOR QUE ENCIENDE</span>
-      <h1>Nuestra Carta a la Brasa</h1>
+      <span class="flame-pill">Cocina a la brasa</span>
+      <h1>Nuestra carta a la brasa</h1>
       <p>Selecciona tus platos, arma tu pedido y envíalo directo a nuestro WhatsApp.</p>
       
       <div class="hero-order-modes">
-        <button type="button" class="mode-pill active" data-mode-btn="MESA" onclick="cambiarModo('MESA')">📍 En Mesa (QR)</button>
-        <button type="button" class="mode-pill" data-mode-btn="DOMICILIO" onclick="cambiarModo('DOMICILIO')">🛵 A Domicilio</button>
-        <button type="button" class="mode-pill" data-mode-btn="LLEVAR" onclick="cambiarModo('LLEVAR')">🛍️ Para Llevar</button>
+        <button type="button" class="mode-pill active" data-mode-btn="MESA" onclick="cambiarModo('MESA')">En mesa</button>
+        <button type="button" class="mode-pill" data-mode-btn="DOMICILIO" onclick="cambiarModo('DOMICILIO')">A domicilio</button>
+        <button type="button" class="mode-pill" data-mode-btn="LLEVAR" onclick="cambiarModo('LLEVAR')">Para llevar</button>
       </div>
     </div>
   </section>
@@ -44,7 +48,7 @@
   <!-- Barra de categorías fija al hacer scroll -->
   <nav class="categories-nav" aria-label="Categorías del menú">
     <div class="categories-scroll">
-      <button type="button" class="cat-pill active" onclick="filtrarCategoria('todas', this)">🔥 Todos</button>
+      <button type="button" class="cat-pill active" onclick="filtrarCategoria('todas', this)">Todos</button>
       <button type="button"
               class="cat-pill"
               th:each="cat : ${menu}"
@@ -70,6 +74,20 @@
                           data-nombre=${pm.producto.nombre},
                           data-precio=${pm.producto.precio},
                           data-categoria=${cat.categoria.nombre}">
+          <div class="card-media">
+            <img class="card-image"
+                 th:if="${pm.producto.imagen != null and !#strings.isEmpty(pm.producto.imagen)}"
+                 th:src="${pm.producto.imagen}"
+                 th:alt="${pm.producto.nombre}"
+                 loading="lazy">
+            <span class="card-media-placeholder"
+                  th:unless="${pm.producto.imagen != null and !#strings.isEmpty(pm.producto.imagen)}"
+                  aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z"/>
+              </svg>
+            </span>
+          </div>
           <div class="card-body">
             <div class="card-header-row">
               <span class="card-category-tag" th:text="${cat.categoria.nombre}">Categoría</span>
@@ -113,9 +131,13 @@
     </div>
 
     <div class="empty-state menu-empty" th:if="${#lists.isEmpty(menu)}">
-      <span class="empty-icon">🔥</span>
-      <h2>Estamos encendiendo el carbón</h2>
-      <p>Pronto estarán disponibles todos nuestros platos.</p>
+      <span class="empty-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z"/>
+        </svg>
+      </span>
+      <h2>Estamos alistando la brasa</h2>
+      <p>Muy pronto estarán disponibles todos nuestros platos.</p>
     </div>
   </main>
 
@@ -123,14 +145,21 @@
   <aside id="floatingCart" class="floating-cart" style="display: none;">
     <div class="cart-bar-content">
       <div class="cart-bar-info">
-        <span class="cart-icon">🛒</span>
+        <span class="cart-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 6h15l-1.6 9H7.6L6 6Z"/>
+            <path d="M6 6 5.2 3H2.5"/>
+            <circle cx="9" cy="20" r="1.2"/>
+            <circle cx="18" cy="20" r="1.2"/>
+          </svg>
+        </span>
         <div>
           <strong id="cartCountText">0 productos</strong>
           <span class="cart-total-badge" id="cartTotalText">$0</span>
         </div>
       </div>
       <button type="button" class="btn-view-cart" onclick="abrirModalCarrito()">
-        Ver Pedido 🔥
+        Ver pedido
       </button>
     </div>
   </aside>
@@ -151,15 +180,15 @@
         <div class="order-mode-tabs">
           <label class="mode-tab">
             <input type="radio" name="modalTipoPedido" value="MESA" checked onchange="actualizarCamposModo()">
-            <span>📍 En Mesa</span>
+            <span>En mesa</span>
           </label>
           <label class="mode-tab">
             <input type="radio" name="modalTipoPedido" value="DOMICILIO" onchange="actualizarCamposModo()">
-            <span>🛵 Domicilio</span>
+            <span>Domicilio</span>
           </label>
           <label class="mode-tab">
             <input type="radio" name="modalTipoPedido" value="LLEVAR" onchange="actualizarCamposModo()">
-            <span>🛍️ Para Llevar</span>
+            <span>Para llevar</span>
           </label>
         </div>
 
@@ -241,7 +270,7 @@
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="cerrarModalCarrito()">Seguir pidiendo</button>
         <button type="button" id="btnConfirmarPedido" class="btn-whatsapp-confirm" onclick="enviarPedido()">
-          <span>Enviar Pedido a WhatsApp 🔥</span>
+          <span>Enviar pedido por WhatsApp</span>
         </button>
       </div>
     </div>
@@ -250,8 +279,8 @@
   <!-- Modal de Éxito / Confirmación -->
   <div id="successModal" class="modal-backdrop" style="display: none;">
     <div class="modal-sheet modal-sheet-success">
-      <div class="success-icon">🔥</div>
-      <h2>¡Pedido Registrado con Éxito!</h2>
+      <div class="success-icon">✓</div>
+      <h2>Pedido registrado</h2>
       <p>Tu orden ha sido registrada en el sistema y se abrió tu WhatsApp para confirmar el pedido con el asadero.</p>
       
       <div class="order-confirmed-box">
@@ -262,7 +291,7 @@
       <p class="muted">Si no se abrió WhatsApp automáticamente, pulsa el botón de abajo:</p>
 
       <a id="btnReabrirWhatsapp" href="#" target="_blank" class="btn-whatsapp-confirm" style="display: inline-flex; text-decoration: none; margin-bottom: 12px;">
-        Abrir WhatsApp Ahora 📲
+        Abrir WhatsApp
       </a>
 
       <button type="button" class="btn-cancel" onclick="reiniciarPedido()">Hacer otro pedido</button>
@@ -271,7 +300,7 @@
 
   <footer class="public-footer">
     <div class="footer-inner">
-      <p><strong>ASADOS AL CARBÓN</strong> · SABOR QUE ENCIENDE</p>
+      <p><strong>ASADOS AL CARBÓN</strong> · COCINA A LA BRASA</p>
       <p class="footer-sub">Hamburguesas · Salchipapas · Suizos · Gratinados · Shawarma · Picadas</p>
       <a th:href="@{/login}">Acceso administrativo</a>
     </div>
@@ -573,7 +602,7 @@
 
       const btn = document.getElementById('btnConfirmarPedido');
       btn.disabled = true;
-      btn.textContent = 'Procesando pedido... ⏳';
+      btn.textContent = 'Procesando pedido...';
 
       try {
         const respuesta = await fetch('/api/pedidos', {
@@ -637,7 +666,7 @@
         alert('Error: ' + err.message);
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Enviar Pedido a WhatsApp 🔥';
+        btn.textContent = 'Enviar pedido por WhatsApp';
       }
     }
 

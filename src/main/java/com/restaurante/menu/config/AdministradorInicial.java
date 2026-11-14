@@ -5,23 +5,22 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
-import com.restaurante.menu.model.dao.UsuarioDAO;
-import com.restaurante.menu.vo.Usuario;
+import com.restaurante.menu.service.UsuarioService;
 
+/**
+ * Garantiza que exista el administrador configurado al arrancar la aplicación.
+ */
 @Component
 public class AdministradorInicial implements ApplicationRunner {
 
-	private final UsuarioDAO usuarioDAO;
-	private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+	private final UsuarioService usuarioService;
 	private final String username;
 	private final String password;
 
-	public AdministradorInicial(UsuarioDAO usuarioDAO,
-			org.springframework.security.crypto.password.PasswordEncoder passwordEncoder,
+	public AdministradorInicial(UsuarioService usuarioService,
 			@Value("${menu.admin.username:jonatan}") String username,
 			@Value("${menu.admin.password:jonatan123}") String password) {
-		this.usuarioDAO = usuarioDAO;
-		this.passwordEncoder = passwordEncoder;
+		this.usuarioService = usuarioService;
 		this.username = username;
 		this.password = password;
 	}
@@ -31,15 +30,14 @@ public class AdministradorInicial implements ApplicationRunner {
 		if (username.isBlank() || password.isBlank()) {
 			return;
 		}
-		
-		var usuarioExistente = usuarioDAO.buscarPorUsername(username);
+
+		var usuarioExistente = usuarioService.buscarPorUsername(username);
 		if (usuarioExistente.isPresent()) {
 			// Asegurar que la contraseña coincida con la configurada
-			usuarioDAO.cambiarPassword(usuarioExistente.get().getId(), passwordEncoder.encode(password));
+			usuarioService.restablecerPassword(usuarioExistente.get().getId(), password);
 		} else {
 			// Crear el usuario administrador
-			usuarioDAO.insertar(new Usuario(null, username, passwordEncoder.encode(password),
-					"Jonatan", "ADMIN", true));
+			usuarioService.crearInicial(username, password, "Jonatan", "ADMIN");
 		}
 	}
 }

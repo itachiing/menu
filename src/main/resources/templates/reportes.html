@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reportes | Asados al Carbón</title>
+  <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+<body class="admin-panel">
+  <div class="app-shell">
+    <aside th:replace="~{fragments :: sidebar('reportes')}"></aside>
+
+    <main class="main-content">
+      <header th:replace="~{fragments :: topbar('Reportes de ventas')}"></header>
+      <div th:replace="~{fragments :: flash}"></div>
+
+      <section class="page-intro">
+        <div>
+          <p class="eyebrow">ANÁLISIS DEL NEGOCIO</p>
+          <h2 th:text="|${reporte.tituloPeriodo}|">Reporte del periodo</h2>
+          <p class="muted">Pedidos, ganancias y platos más vendidos por día, mes o año.</p>
+        </div>
+        <a class="button button-secondary" th:href="@{/admin/pedidos}">Ir a pedidos</a>
+      </section>
+
+      <!-- Filtro del periodo -->
+      <section class="report-filter" aria-label="Filtro del periodo">
+        <div class="report-tabs" role="tablist" aria-label="Tipo de periodo">
+          <a class="report-tab"
+             th:classappend="${reporte.periodo == 'dia'} ? ' is-active'"
+             th:href="@{/admin/reportes(periodo='dia',fecha=${reporte.fechaIso})}"
+             role="tab"
+             th:aria-selected="${reporte.periodo == 'dia'}">Día</a>
+          <a class="report-tab"
+             th:classappend="${reporte.periodo == 'mes'} ? ' is-active'"
+             th:href="@{/admin/reportes(periodo='mes',fecha=${reporte.fechaIso})}"
+             role="tab"
+             th:aria-selected="${reporte.periodo == 'mes'}">Mes</a>
+          <a class="report-tab"
+             th:classappend="${reporte.periodo == 'anio'} ? ' is-active'"
+             th:href="@{/admin/reportes(periodo='anio',fecha=${reporte.fechaIso})}"
+             role="tab"
+             th:aria-selected="${reporte.periodo == 'anio'}">Año</a>
+        </div>
+
+        <form class="report-date" method="get" th:action="@{/admin/reportes}">
+          <label class="report-caption" for="reporteFecha">Fecha de referencia</label>
+          <input id="reporteFecha" type="date" name="fecha"
+                 th:value="${reporte.fechaIso}"
+                 onchange="this.form.submit()">
+          <input type="hidden" name="periodo" th:value="${reporte.periodo}">
+          <button class="button button-secondary" type="submit">Consultar</button>
+        </form>
+
+        <div class="report-steps">
+          <a class="report-today" th:href="@{/admin/reportes(periodo=${reporte.periodo})}">Hoy</a>
+          <a class="report-step"
+             th:href="@{/admin/reportes(periodo=${reporte.periodo},fecha=${reporte.fechaAnteriorIso})}"
+             aria-label="Periodo anterior" title="Periodo anterior">←</a>
+          <a class="report-step"
+             th:href="@{/admin/reportes(periodo=${reporte.periodo},fecha=${reporte.fechaSiguienteIso})}"
+             aria-label="Periodo siguiente" title="Periodo siguiente">→</a>
+        </div>
+      </section>
+
+      <div class="report-period">
+        <div>
+          <span class="report-caption">Periodo consultado</span>
+          <h3 th:text="${reporte.tituloPeriodo}">Noviembre de 2026</h3>
+        </div>
+        <span class="report-range" th:text="${reporte.rangoTexto}">1 – 30 de noviembre de 2026</span>
+      </div>
+
+      <!-- Métricas del periodo -->
+      <section class="metric-grid report-metrics">
+        <article class="metric">
+          <span class="metric-label">Ganancias del periodo</span>
+          <strong th:text="|$${#numbers.formatDecimal(reporte.ventas, 1, 'POINT', 0, 'POINT')}|">$0</strong>
+          <span class="metric-foot">
+            <span class="metric-trend"
+                  th:classappend="|trend-${reporte.variacionVentas.tendencia}|"
+                  th:text="${reporte.variacionVentas.texto}">sin cambios</span>
+            vs. periodo anterior
+          </span>
+        </article>
+        <article class="metric">
+          <span class="metric-label">Pedidos registrados</span>
+          <strong th:text="${reporte.pedidos}">0</strong>
+          <span class="metric-foot">
+            <span class="metric-trend"
+                  th:classappend="|trend-${reporte.variacionPedidos.tendencia}|"
+                  th:text="${reporte.variacionPedidos.texto}">sin cambios</span>
+            vs. periodo anterior
+          </span>
+        </article>
+        <article class="metric">
+          <span class="metric-label">Ticket promedio</span>
+          <strong th:text="|$${#numbers.formatDecimal(reporte.ticketPromedio, 1, 'POINT', 0, 'POINT')}|">$0</strong>
+          <span class="metric-foot">
+            <span class="metric-trend"
+                  th:classappend="|trend-${reporte.variacionTicket.tendencia}|"
+                  th:text="${reporte.variacionTicket.texto}">sin cambios</span>
+            vs. periodo anterior
+          </span>
+        </article>
+        <article class="metric">
+          <span class="metric-label">Productos vendidos</span>
+          <strong th:text="${reporte.productosVendidos}">0</strong>
+          <span class="metric-foot">
+            <span class="metric-trend"
+                  th:classappend="|trend-${reporte.variacionProductos.tendencia}|"
+                  th:text="${reporte.variacionProductos.texto}">sin cambios</span>
+            vs. periodo anterior
+          </span>
+        </article>
+      </section>
+
+      <p class="report-note" th:if="${reporte.cancelados > 0}"
+         th:text="|${reporte.cancelados} pedido(s) cancelado(s) no se incluyen en las ganancias.|">
+        0 pedidos cancelados.
+      </p>
+
+      <!-- Gráfica de ingresos -->
+      <section class="report-grid">
+        <article class="report-card">
+          <div class="report-card-head">
+            <div>
+              <h3>
+                Ganancias por
+                <span th:text="${reporte.periodo == 'dia' ? 'hora' : (reporte.periodo == 'mes' ? 'día' : 'mes')}">hora</span>
+              </h3>
+              <p>Ventas registradas en el periodo, sin pedidos cancelados.</p>
+            </div>
+            <span class="report-legend">Máximo <b th:text="|$${#numbers.formatDecimal(reporte.maximoSerie, 1, 'POINT', 0, 'POINT')}|">$0</b></span>
+          </div>
+
+          <div class="report-chart-scroll" th:if="${reporte.haySerie}">
+            <div class="report-bars"
+                 th:classappend="${reporte.periodo == 'dia' ? ' bars-24' : (reporte.periodo == 'mes' ? ' bars-31' : ' bars-12')}">
+              <div class="report-col" th:each="punto : ${reporte.serie}">
+                <div class="report-bar-track"
+                     th:title="|${punto.etiqueta} · ${punto.pedidos} pedidos · $${#numbers.formatDecimal(punto.total, 1, 'POINT', 0, 'POINT')}|">
+                  <span class="report-bar"
+                        th:classappend="${punto.pedidos == 0} ? ' is-empty'"
+                        th:style="|height: ${punto.alturaPct}%|"></span>
+                </div>
+                <span class="report-x" th:text="${punto.etiquetaVisible ? punto.etiqueta : ''}">00</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="report-empty" th:if="${!reporte.haySerie}">
+            <span class="empty-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z"/>
+              </svg>
+            </span>
+            <p>Sin ventas registradas en este periodo.</p>
+          </div>
+        </article>
+      </section>
+
+      <!-- Ranking y actividad -->
+      <section class="report-grid report-grid-2">
+        <article class="report-card">
+          <div class="report-card-head">
+            <div>
+              <h3>Platos más vendidos</h3>
+              <p>Ranking por unidades y valor generado, con adicionales incluidos.</p>
+            </div>
+            <span class="report-legend">Top <b th:text="${#lists.size(reporte.topProductos)}">8</b></span>
+          </div>
+
+          <ul class="report-products" th:if="${reporte.hayProductos}">
+            <li th:each="producto, estado : ${reporte.topProductos}">
+              <div class="report-product-head">
+                <span class="report-rank" th:text="${estado.count}">1</span>
+                <span class="report-product-name" th:text="${producto.nombre}">Producto</span>
+                <span class="report-product-total"
+                      th:text="|$${#numbers.formatDecimal(producto.total, 1, 'POINT', 0, 'POINT')}|">$0</span>
+              </div>
+              <div class="report-product-track">
+                <span class="report-product-bar" th:style="|width: ${producto.barraPct}%|"></span>
+              </div>
+              <small class="report-product-meta"
+                     th:text="|${producto.cantidad} unidades vendidas|">3 unidades vendidas</small>
+            </li>
+          </ul>
+
+          <div class="report-empty" th:if="${!reporte.hayProductos}">
+            <span class="empty-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z"/>
+              </svg>
+            </span>
+            <p>Aún no hay productos vendidos en este periodo.</p>
+          </div>
+        </article>
+
+        <article class="report-card">
+          <div class="report-card-head">
+            <div>
+              <h3>
+                Registro por
+                <span th:text="${reporte.periodo == 'dia' ? 'hora' : (reporte.periodo == 'mes' ? 'día' : 'mes')}">hora</span>
+              </h3>
+              <p>Detalle de pedidos y ganancias en cada franja con actividad.</p>
+            </div>
+          </div>
+
+          <div class="report-table-wrap" th:if="${!#lists.isEmpty(reporte.actividad)}">
+            <table>
+              <thead>
+                <tr>
+                  <th>Franja</th>
+                  <th>Pedidos</th>
+                  <th class="report-align-right">Ganancias</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:each="fila : ${reporte.actividad}">
+                  <td class="strong" th:text="${fila.etiqueta}">08</td>
+                  <td th:text="${fila.pedidos}">2</td>
+                  <td class="strong amount report-align-right"
+                      th:text="|$${#numbers.formatDecimal(fila.total, 1, 'POINT', 0, 'POINT')}|">$0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="report-empty" th:if="${#lists.isEmpty(reporte.actividad)}">
+            <span class="empty-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z"/>
+              </svg>
+            </span>
+            <p>Sin movimiento para mostrar.</p>
+          </div>
+        </article>
+      </section>
+
+      <!-- Pedidos del periodo -->
+      <section class="section-heading report-recent-head">
+        <div>
+          <p class="eyebrow">REGISTRO DEL PERIODO</p>
+          <h2>Pedidos recientes</h2>
+        </div>
+        <a class="text-link" th:href="@{/admin/pedidos}">
+          Gestionar pedidos <span aria-hidden="true">→</span>
+        </a>
+      </section>
+
+      <div class="table-wrap" th:if="${!#lists.isEmpty(reporte.pedidosRecientes)}">
+        <table>
+          <thead>
+            <tr>
+              <th>Pedido</th>
+              <th>Fecha / hora</th>
+              <th>Cliente</th>
+              <th>Platos</th>
+              <th class="report-align-right">Total</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="item : ${reporte.pedidosRecientes}">
+              <td class="strong" th:text="|#${item.pedido.id}|">#1</td>
+              <td th:text="${reporte.periodo == 'dia'
+                    ? #temporals.format(item.pedido.fechaHora, 'HH:mm')
+                    : #temporals.format(item.pedido.fechaHora, 'dd/MM HH:mm')}">12:30</td>
+              <td>
+                <span class="strong">
+                  <span th:if="${item.pedido.tipoPedido == 'MESA'}"
+                        th:text="|Mesa ${item.mesaNumero != null ? item.mesaNumero : '?'}|">Mesa 1</span>
+                  <span th:if="${item.pedido.tipoPedido == 'DOMICILIO'}">Domicilio</span>
+                  <span th:if="${item.pedido.tipoPedido == 'LLEVAR'}">Para llevar</span>
+                </span>
+                <small class="table-sub" th:if="${item.pedido.nombreCliente != null}"
+                       th:text="${item.pedido.nombreCliente}">Cliente</small>
+              </td>
+              <td class="report-platos"
+                  th:text="${#strings.listJoin(item.lineas.![productoNombre], ', ')}">Hamburguesa</td>
+              <td class="strong amount report-align-right"
+                  th:text="|$${#numbers.formatDecimal(item.pedido.total, 1, 'POINT', 0, 'POINT')}|">$0</td>
+              <td>
+                <span class="status-pill"
+                      th:classappend="${' status-' + #strings.toLowerCase(item.pedido.estado)}"
+                      th:text="${#strings.replace(item.pedido.estado, '_', ' ')}">RECIBIDO</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="empty-state" th:if="${#lists.isEmpty(reporte.pedidosRecientes)}">
+        <span class="empty-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5Z"/>
+          </svg>
+        </span>
+        <h2>Sin pedidos en este periodo</h2>
+        <p>Los pedidos que hagan los clientes aparecerán aquí con su fecha y su total.</p>
+      </div>
+    </main>
+  </div>
+  <script th:src="@{/js/app.js}" defer></script>
+</body>
+</html>

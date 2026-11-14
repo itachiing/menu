@@ -14,49 +14,43 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.restaurante.menu.model.dao.CategoriaDAO;
-import com.restaurante.menu.vo.Categoria;
+import com.restaurante.menu.entity.Categoria;
+import com.restaurante.menu.service.CategoriaService;
 
 @RestController
 @RequestMapping("/api/categorias")
 public class CategoriaController {
 
-	private final CategoriaDAO categoriaDAO;
+	private final CategoriaService categoriaService;
 
-	public CategoriaController(CategoriaDAO categoriaDAO) {
-		this.categoriaDAO = categoriaDAO;
+	public CategoriaController(CategoriaService categoriaService) {
+		this.categoriaService = categoriaService;
 	}
 
 	@GetMapping
 	public List<Categoria> listar(@RequestParam(defaultValue = "false") boolean soloActivas) {
-		return categoriaDAO.listar(soloActivas);
+		return categoriaService.listar(soloActivas);
 	}
 
 	@GetMapping("/{id}")
 	public Categoria obtener(@PathVariable Integer id) {
-		return Validaciones.encontrado(categoriaDAO.buscarPorId(id), "Categoría");
+		return categoriaService.obtener(id);
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public Categoria crear(@RequestBody Categoria categoria) {
-		categoria.setNombre(Validaciones.texto(categoria.getNombre(), "nombre", 60));
-		return categoriaDAO.insertar(categoria);
+		return categoriaService.crear(categoria);
 	}
 
 	@PutMapping("/{id}")
 	public Categoria actualizar(@PathVariable Integer id, @RequestBody Categoria categoria) {
-		obtener(id);
-		categoria.setId(id);
-		categoria.setNombre(Validaciones.texto(categoria.getNombre(), "nombre", 60));
-		categoriaDAO.actualizar(categoria);
-		return obtener(id);
+		return categoriaService.actualizar(id, categoria);
 	}
 
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void eliminar(@PathVariable Integer id) {
-		obtener(id);
-		categoriaDAO.eliminar(id);
+		categoriaService.eliminar(id);
 	}
 }

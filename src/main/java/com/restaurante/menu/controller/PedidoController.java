@@ -13,25 +13,25 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.restaurante.menu.model.dao.PedidoDAO;
-import com.restaurante.menu.model.dto.NuevoPedidoRequest;
-import com.restaurante.menu.model.dto.PedidoCompleto;
+import com.restaurante.menu.dto.NuevoPedidoRequest;
+import com.restaurante.menu.dto.PedidoCompleto;
+import com.restaurante.menu.service.PedidoService;
 
 @RestController
 @RequestMapping("/api/pedidos")
 public class PedidoController {
 
-	private final PedidoDAO pedidoDAO;
+	private final PedidoService pedidoService;
 
-	public PedidoController(PedidoDAO pedidoDAO) {
-		this.pedidoDAO = pedidoDAO;
+	public PedidoController(PedidoService pedidoService) {
+		this.pedidoService = pedidoService;
 	}
 
 	/** El cliente envía su pedido; el servidor calcula precios y total. */
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public PedidoCompleto crear(@RequestBody NuevoPedidoRequest solicitud) {
-		return pedidoDAO.crear(solicitud);
+		return pedidoService.crear(solicitud);
 	}
 
 	/**
@@ -41,20 +41,19 @@ public class PedidoController {
 	@GetMapping
 	public List<PedidoCompleto> listar(@RequestParam(required = false) String estado) {
 		if (estado == null || estado.isBlank()) {
-			return pedidoDAO.listarActivos();
+			return pedidoService.listarActivos();
 		}
-		return pedidoDAO.listarPorEstado(estado);
+		return pedidoService.listarPorEstado(estado);
 	}
 
 	@GetMapping("/{id}")
 	public PedidoCompleto obtener(@PathVariable Integer id) {
-		return Validaciones.encontrado(pedidoDAO.buscarCompleto(id), "Pedido");
+		return pedidoService.obtener(id);
 	}
 
 	/** Cambia el estado: RECIBIDO, EN_PREPARACION, LISTO, ENTREGADO o CANCELADO. */
 	@PatchMapping("/{id}/estado")
 	public PedidoCompleto cambiarEstado(@PathVariable Integer id, @RequestParam String estado) {
-		pedidoDAO.cambiarEstado(id, estado);
-		return obtener(id);
+		return pedidoService.cambiarEstado(id, estado);
 	}
 }
