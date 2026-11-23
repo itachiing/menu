@@ -616,6 +616,64 @@
           }
         }
       ]
+    },
+    {
+      "name": "Chatbot Asistente Virtual",
+      "item": [
+        {
+          "name": "Enviar mensaje al asistente",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mensaje\": \"¿Qué hamburguesas tienen y qué adicionales me recomiendas?\"\n}"
+            },
+            "url": "{{baseUrl}}/api/chatbot/mensaje",
+            "description": "Envía una consulta al asistente virtual. No requiere autenticación. Si no hay GEMINI_API_KEY configurada, responde 503."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde con estado 200 o 503 si falta la API Key', () => {",
+                  "    pm.expect([200, 503]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reiniciar historial de conversación",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/chatbot/historial",
+            "description": "Limpia el historial de mensajes de la sesión del cliente. Responde 204 No Content."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204 No Content', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

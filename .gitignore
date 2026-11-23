@@ -36,3 +36,8 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Variables de entorno y llaves privadas ###
+.env
+*.env
+.env.*

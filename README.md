@@ -19,7 +19,7 @@ que trae XAMPP).
 | Operaciones CRUD | CRUD completo en categorías, productos, adicionales, mesas y variantes. Pedidos: crear, consultar, listar y cambiar estado |
 | API REST | Endpoints JSON bajo `/api/**` |
 | Persistencia en MySQL/MariaDB | `schema.sql` + consultas JDBC contra la base `menu_digital` |
-| Pruebas de endpoints | Colección Postman en `postman/` + 17 pruebas automatizadas |
+| Pruebas de endpoints | Colección Postman en `postman/` + 112 pruebas automatizadas |
 
 ## Tecnologías
 
@@ -165,18 +165,28 @@ portada de la tarjeta.
 | GET | `/api/pedidos` | Lista pedidos activos (`?estado=`) | ADMIN/COCINA/MESERO |
 | GET | `/api/pedidos/{id}` | Obtiene un pedido completo | ADMIN/COCINA/MESERO |
 | PATCH | `/api/pedidos/{id}/estado?estado=` | Cambia el estado del pedido | ADMIN/COCINA/MESERO |
+| POST | `/api/chatbot/mensaje` | Consulta al asistente virtual sobre la carta y precios | Público |
+| DELETE | `/api/chatbot/historial` | Reinicia la conversación en la sesión actual | Público |
 
 ### Autenticación de la API
 
 - Las rutas protegidas usan **HTTP Basic** (también funciona el login por formulario del panel web).
 - En Postman, la colección ya incluye autenticación Basic a nivel de colección.
-- `POST /api/pedidos`, `/api/menu` y `/api/mesas/codigo/**` son públicos.
+- `POST /api/pedidos`, `/api/menu`, `/api/mesas/codigo/**`, `POST /api/chatbot/mensaje` y `DELETE /api/chatbot/historial` son públicos.
 
 ### Ejemplo con cURL
 
 ```bash
 # Menú público
 curl http://localhost:8085/api/menu
+
+# Chatbot asistente virtual
+curl -X POST http://localhost:8085/api/chatbot/mensaje \
+  -H "Content-Type: application/json" \
+  -d '{"mensaje":"¿Qué hamburguesas tienen y qué adicionales me recomiendas?"}'
+
+# Reiniciar historial de conversación
+curl -X DELETE http://localhost:8085/api/chatbot/historial
 
 # Listar productos con autenticación básica
 curl -u jonatan:jonatan123 http://localhost:8085/api/productos
@@ -186,6 +196,52 @@ curl -u jonatan:jonatan123 -X POST http://localhost:8085/api/productos \
   -H "Content-Type: application/json" \
   -d '{"categoriaId":1,"nombre":"Burguer Especial","descripcion":"Con tocineta","precio":18000,"disponible":true}'
 ```
+
+## Chatbot con Google Gemini
+
+El menú público (`/menu`) incluye un asistente virtual con IA que orienta al comensal sobre los platos, variantes, ingredientes, adicionales y cómo realizar su pedido.
+
+### 1. Obtener la API Key de Google Gemini
+
+1. Ingresa a [Google AI Studio](https://aistudio.google.com/).
+2. Inicia sesión con tu cuenta de Google.
+3. Haz clic en **Get API key** y luego en **Create API key**.
+4. Copia tu clave generada (empieza por `AIzaSy...`).
+
+### 2. Configurar la clave en el entorno
+
+La clave vive exclusivamente en variables de entorno (nunca en el código ni en repositorios):
+
+**En PowerShell (Windows):**
+```powershell
+$env:GEMINI_API_KEY="AIzaSyTuClaveAqui"
+```
+
+**En Bash / Linux / macOS:**
+```bash
+export GEMINI_API_KEY="AIzaSyTuClaveAqui"
+```
+
+> **Nota de seguridad:** También puedes crear un archivo `.env` en la raíz del proyecto para definir variables locales; este archivo ya está protegido en `.gitignore`. Si no configuras la clave, el sistema arranca normalmente y responde con un mensaje amable invitando a pedir por WhatsApp (código HTTP 503).
+
+### 3. Modelo y personalización
+
+El modelo por defecto es `gemini-flash-latest`, rápido y de bajo consumo de cuota. Puedes cambiarlo mediante variable de entorno:
+
+```powershell
+$env:GEMINI_MODEL="gemini-2.0-flash"
+```
+
+### 4. Probar el chatbot en el navegador
+
+1. Inicia la aplicación:
+   ```powershell
+   .\gradlew.bat bootRun
+   ```
+2. Abre la carta pública en tu navegador: [http://localhost:8085/menu](http://localhost:8085/menu).
+3. En la esquina inferior derecha verás el botón flotante **"¿Dudas? Pregúntame"** con icono de fuego.
+4. Haz clic para desplegar el asistente: puedes usar los botones de preguntas rápidas (chips) o escribir cualquier pregunta en lenguaje natural. Presiona **Enter** para enviar, **Shift+Enter** para salto de línea y **Esc** para cerrar.
+5. El botón de reinicio (icono circular en la cabecera del chat) permite empezar una conversación limpia en cualquier momento.
 
 ## Reportes de ventas
 
@@ -223,12 +279,12 @@ antes de crear el pedido, así que funciona tanto con tus datos actuales como co
 .\gradlew.bat test
 ```
 
-Las pruebas no requieren base de datos porque usan Mockito y `MockMvc`:
+112 pruebas automatizadas que no requieren conexión a base de datos porque usan Mockito, `MockRestServiceServer` y `MockMvc`:
 
-- `ProductoServiceTest`: validaciones y reglas de negocio (5 pruebas).
-- `PedidoServiceTest`: consulta y cambio de estado (3 pruebas).
-- `ProductoControllerTest`: endpoints GET, POST, PUT y DELETE (7 pruebas).
-- `CategoriaControllerTest`: listado y creación (2 pruebas).
+- `GeminiClientTest`: cliente HTTP hacia Gemini, simulación de respuestas, cuota (429), fallos (403/503), bloqueo por seguridad y candidatos vacíos (6 pruebas).
+- `ChatbotServiceTest`: armado de menú con precios, recorte y persistencia de historial en sesión, validación de mensajes y rate limiting (7 pruebas).
+- `ChatbotControllerTest`: endpoints REST `/api/chatbot/mensaje` y `/api/chatbot/historial` con códigos 200, 400, 429, 503 y 204 (5 pruebas).
+- Pruebas unitarias de controladores y servicios para productos, categorías, mesas, pedidos, variantes, adicionales y reportes (94 pruebas).
 
 ## Modelo de datos
 
@@ -247,3 +303,7 @@ usuario (independiente, para el panel administrativo)
   `spring.sql.init.mode=never`. La base se prepara una vez con `schema.sql`.
 - La contraseña de los usuarios se almacena cifrada con BCrypt.
 - El panel web (Thymeleaf) está disponible en `/`, `/menu`, `/login` y `/admin/**`.
+
+## Cambio en rama de reportes
+
+Esta línea fue agregada desde la rama `feature/reportes` como parte del ejercicio de Git y GitHub.
