@@ -88,5 +88,103 @@
     <div th:if="${error}" class="notice notice-error" role="alert" th:text="${error}"></div>
   </div>
 
+  <!-- Chatbot Asistente Virtual Fragment -->
+  <div th:fragment="chatbot" class="chatbot-wrapper" id="chatbotWrapper">
+    <button type="button"
+            id="chatbotLauncher"
+            class="chatbot-launcher"
+            aria-label="Abrir asistente virtual"
+            aria-expanded="false"
+            aria-controls="chatbotPanel">
+      <span class="chatbot-launcher-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2c.5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.3 1-3a2.5 2.5 0 0 0 2.5 2.5c2.5 0 2-4 3.5-11.5Z"/>
+        </svg>
+      </span>
+      <span class="chatbot-launcher-text">¿Dudas? Pregúntame</span>
+    </button>
+
+    <section id="chatbotPanel"
+             class="chatbot-panel"
+             role="dialog"
+             aria-modal="true"
+             aria-label="Asistente virtual de Asados al Carbón"
+             aria-hidden="true"
+             style="display: none;"
+             th:attr="data-url-mensaje=@{/api/chatbot/mensaje}, data-url-historial=@{/api/chatbot/historial}">
+      
+      <header class="chatbot-header">
+        <div class="chatbot-header-info">
+          <div class="chatbot-avatar" aria-hidden="true">🔥</div>
+          <div>
+            <h2 class="chatbot-title">Asistente Virtual</h2>
+            <span class="chatbot-status">En línea • Asados al Carbón</span>
+          </div>
+        </div>
+        <div class="chatbot-header-actions">
+          <button type="button"
+                  id="chatbotResetBtn"
+                  class="chatbot-btn-action"
+                  title="Nueva conversación"
+                  aria-label="Reiniciar conversación">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+              <path d="M3 3v5h5"/>
+            </svg>
+          </button>
+          <button type="button"
+                  id="chatbotCloseBtn"
+                  class="chatbot-btn-action chatbot-close"
+                  title="Cerrar asistente"
+                  aria-label="Cerrar asistente">
+            ✕
+          </button>
+        </div>
+      </header>
+
+      <div id="chatbotMessages"
+           class="chatbot-messages"
+           role="log"
+           aria-live="polite"
+           aria-atomic="false">
+        <div class="chatbot-bubble chatbot-bubble-bot">
+          ¡Hola! Soy tu asistente en Asados al Carbón 🔥. ¿En qué te puedo orientar hoy? Puedo recomendarte platos, contarte precios, ingredientes o explicarte cómo armar y enviar tu pedido.
+        </div>
+      </div>
+
+      <div id="chatbotTyping" class="chatbot-typing" style="display: none;" aria-hidden="true">
+        <span></span><span></span><span></span>
+        <small>El asistente está escribiendo…</small>
+      </div>
+
+      <div class="chatbot-chips" id="chatbotChips" aria-label="Sugerencias de preguntas">
+        <button type="button" class="chatbot-chip" data-question="¿Qué hamburguesas tienen?">🍔 ¿Qué hamburguesas tienen?</button>
+        <button type="button" class="chatbot-chip" data-question="Recomiéndame algo para 2 personas">👥 Para 2 personas</button>
+        <button type="button" class="chatbot-chip" data-question="¿Cómo hago mi pedido?">📲 ¿Cómo hago mi pedido?</button>
+        <button type="button" class="chatbot-chip" data-question="¿Qué adicionales hay?">🍟 ¿Qué adicionales hay?</button>
+      </div>
+
+      <form id="chatbotForm" class="chatbot-form" onsubmit="return false;">
+        <label for="chatbotInput" class="sr-only">Escribe tu pregunta</label>
+        <textarea id="chatbotInput"
+                  class="chatbot-input"
+                  rows="1"
+                  maxlength="500"
+                  placeholder="Pregúntame algo sobre la carta... (Enter para enviar)"
+                  aria-label="Mensaje para el asistente"></textarea>
+        <button type="submit"
+                id="chatbotSendBtn"
+                class="chatbot-send-btn"
+                aria-label="Enviar mensaje"
+                disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </form>
+    </section>
+  </div>
+
 </body>
 </html>

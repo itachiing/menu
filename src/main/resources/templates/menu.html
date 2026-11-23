@@ -164,6 +164,9 @@
     </div>
   </aside>
 
+  <!-- Asistente Virtual Chatbot -->
+  <div th:replace="~{fragments :: chatbot}"></div>
+
   <!-- Modal del Carrito y Envío a WhatsApp -->
   <div id="cartModal" class="modal-backdrop" style="display: none;">
     <div class="modal-sheet">
@@ -681,5 +684,7 @@
       document.body.style.overflow = '';
     }
   </script>
+  <!-- Chatbot Asistente Virtual JS -->
+  <script th:src="@{/js/chatbot.js}"></script>
 </body>
 </html>

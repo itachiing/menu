@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.restaurante.menu.service.ChatbotException;
+
 /**
  * Convierte las excepciones de los DAO y controllers en respuestas JSON con el formato
  * {"error": "mensaje"}.
@@ -43,6 +45,11 @@ public class GlobalExceptionHandler {
 				"No se pudo completar la operación: hay datos relacionados (por ejemplo, pedidos) "
 						+ "o una referencia inválida. Si quieres quitar algo del menú, márcalo como "
 						+ "no disponible o inactivo en lugar de eliminarlo");
+	}
+
+	@ExceptionHandler(ChatbotException.class)
+	public ResponseEntity<Map<String, String>> errorChatbot(ChatbotException e) {
+		return responder(e.getEstadoHttp(), e.getMessage());
 	}
 
 	private static ResponseEntity<Map<String, String>> responder(HttpStatus estado, String mensaje) {

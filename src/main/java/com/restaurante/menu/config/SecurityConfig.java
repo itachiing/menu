@@ -39,7 +39,9 @@ public class SecurityConfig {
 				.requestMatchers("/", "/login", "/registro", "/css/**", "/js/**", "/images/**", "/uploads/**", "/menu", "/api/menu",
 						"/api/mesas/codigo/**")
 				.permitAll()
-				.requestMatchers(HttpMethod.POST, "/api/pedidos")
+				.requestMatchers(HttpMethod.POST, "/api/pedidos", "/api/chatbot/mensaje")
+				.permitAll()
+				.requestMatchers(HttpMethod.DELETE, "/api/chatbot/historial")
 				.permitAll()
 				.requestMatchers("/admin/pedidos/**", "/api/pedidos/**")
 				.hasAnyRole("ADMIN", "COCINA", "MESERO")
